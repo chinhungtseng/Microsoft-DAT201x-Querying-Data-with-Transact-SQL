@@ -279,21 +279,6 @@ s
   | FETCH FIRST|NEXT <fetch_value> ROW(S) ONLY |
   |--------------------------------------------|
 
-Key Points and Additional Reading
-1. Key Points
-- By default, the SELECT statement returns all rows. If multiple rows contain the same values for every column, they are duplicated in the results.
-  Using the DISTINCT keyword eliminates dupicates, ensuring that only one row for each distinct combination of column values is returned.
-- The order of rows in the result of a SELECT statement is not guaranteed unless you explicitly specify one or more columns in an ORDER BY clause.
-  You can specify sort direction as ASC(the default) or DESC.
-- You can combine the ORDER BY clause with the TOP keyword to retrict the results so that they include only the top n rows
-  (where n is the number or percentage of rows you want to return).
-- You can implement a query to retrueve a specified "page" of results by using the OFFSET and FETCH keywords with the ORDER BY clause.
-
-2. Additional Reading
-Review the documentation for the SELECT and ORDER BY clauses in the Transact-SQL Reference.
-SELECT (http://msdn.microsoft.com/en-us/library/ms189499.aspx)
-ORDER BY (https://msdn.microsoft.com/en-us/library/ms188385.aspx)
-
 DEMO
 - Display a list of product colors
 SELECT DISTINCT ISNULL(COLOR, 'None') AS Color FROM SalesLT.Product;
@@ -313,6 +298,22 @@ SELECT Name, ListPrice FROM SalesLT.Product ORDER BY ProductNumber OFFSET 0 ROWS
 - Display the next ten product by product number
 SELECT Name, ListPrice FROM SalesLT.Product ORDER BY ProductNumber OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY;
 
+Key Points and Additional Reading
+1. Key Points
+- By default, the SELECT statement returns all rows. If multiple rows contain the same values for every column, they are duplicated in the results.
+  Using the DISTINCT keyword eliminates dupicates, ensuring that only one row for each distinct combination of column values is returned.
+- The order of rows in the result of a SELECT statement is not guaranteed unless you explicitly specify one or more columns in an ORDER BY clause.
+  You can specify sort direction as ASC(the default) or DESC.
+- You can combine the ORDER BY clause with the TOP keyword to retrict the results so that they include only the top n rows
+  (where n is the number or percentage of rows you want to return).
+- You can implement a query to retrueve a specified "page" of results by using the OFFSET and FETCH keywords with the ORDER BY clause.
+
+2. Additional Reading
+Review the documentation for the SELECT and ORDER BY clauses in the Transact-SQL Reference.
+- SELECT (http://msdn.microsoft.com/en-us/library/ms189499.aspx)
+- ORDER BY (https://msdn.microsoft.com/en-us/library/ms188385.aspx)
+
+
 Filtering and Using Predicates
 
 Specify predicates in the WHERE caluse
@@ -320,23 +321,61 @@ Specify predicates in the WHERE caluse
 | Predicates and Operators | Description                                                 |
 |--------------------------|-------------------------------------------------------------|
 | = < >                    | Compares values for equality / non-equality                 |
+|                          |                                                             |
 | IN                       | Determines whether a specified value matches any value in a |
 |                          | subquery or a list.                                         |
+|                          |                                                             |
 | BETWEEN                  | Specitfies an inclusive range to test.                      |
+|                          |                                                             |
 | LIKE                     | Determines whether a specific character string matches a    |
 |                          | specified pattern, which can include wildcards.             |
+|                          |                                                             |
 | AND                      | Combines two Boolean expressions and returns TRUE only      |
 |                          | when both are TRUE.                                         |
+|                          |                                                             |
 | OR                       | Combines two Boolean expressions and returns TRUE if either |
 |                          | is TRUE.                                                    |
+|                          |                                                             |
 | NOT                      | Reverses the result of a search condition.                  |
 |--------------------------|-------------------------------------------------------------|
 
+DEMO
+- List information about product model 6
+SELECT Name, Color, Size FROM SalesLT,Product WHERE ProductModelID <> 6;
 
+- List information about products that have a product number beginning FR
+SELECT productnumber, Name, ListPrict FROM SalesLT.Product WHERE ProductName like 'FR%';
 
+- Filter the previous query to ensure to ensure that the product number contains two sets of two didgets
+SELECT Name ListPrice FROM SalesLT.Product WHERE ProductNumber LIKE 'FR-_[0-9][0-9]_-[0-9][0-9]';
 
+- Find products that have no sell end date
+SELECT Name FROM SalesLT.Product WHERE SellEndDate IS NOT NULL;
+SELECT Name FROM SalesLT.Product WHERE SellEndDate <> NULL;
 
+- Find products that have no sell end date
+SELECT Name FROM SalesLT.Product WHERE SellEndDate BETWEEN '2006/1/1' AND '2006/12/31';
 
+- Find products that have a category ID of 5, 6, or 7
+SELECT ProductCategoryID, Name, ListPrice FROM SalesLT.Product WHERE ProductCategoryID IN (5, 6, 7);
+
+- Find products that have a category ID of 5, 6, or 7 and have a sell end date
+SELECT ProductCategoryID, Name, ListPrice FROM SalesLT.Product WHERE ProductCategoryID IN (5, 6, 7) AND SellEndDate IS NULL;
+
+- Select products that have a category ID of 5, 6, or 7 and product nember that begins FR
+SELECT ProductCategoryID, Name, ListPrice FROM SalesLT.Product WHERE ProductCategoryID LIKE 'FR%' OR ProductCategoryID IN (5, 6, 7);
+
+Key Points and Additional Reading
+1. Key Points
+- Use the WHERE clause t filter teh results returned by a SELECT query based on a search condition.
+- A search condition is composed of one or more predicates.
+- Predicates include conditional operators (such as =, > and <), IN, LIKE, and NOT.
+- You can use AND and OR to combine predicates based on Boolean Logic.
+
+2. Additional Reading
+Reviwe the documentation for WHERE and Search Condition in the Transact-SQL Reference.
+- WHERE (https://msdn.microsoft.com/en-us/library/ms188047.aspx)
+- Search Condition (https://msdn.microsoft.com/en-us/library/ms173545.aspx)
 
 
 
