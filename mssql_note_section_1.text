@@ -1,0 +1,368 @@
+DAT201x: Querying with Transact-SQL
+This is the ntoe with this course
+Student: chin hung tseng
+----------------------------------------------------------------------------------------------------------------------------
+Introduction
+
+Instructors: 
+1. Graeme Malcolm
+2. Geoff Allix
+
+Course Topics - Querying with Transact-SQL
+1. Introduction to Transact-SQL
+2. Querying Tables with SELECT
+3. Querying Multiple Tables with Joins
+4. Using Set Operators
+5. Using Funcitons and Aggregating Data
+6. Using Subqueries and APPLY
+7. Using Table Expressions
+8. Grouping Sets and Pivoting Data
+9. Modifing Data
+10. Programming with Transact-SQL
+11. Error Handing and Transactions
+
+Setting Exprctations
+1. Target Audience
+- Aspiring database professionals
+- Application developers
+- Anyone preparing for SQL Server certification exams
+2. Course Materials
+- Online videl presentations
+- Downloadable labs
+3. Suggested Approach
+- Complete each module and lab in turn
+- Engage with fellow students at Born To Learn
+
+Suggested Resources
+1. Transact-SQL Reference (https://msdn.microsoft.com/en-us/library/bb510741.aspx)
+2. The book: Microsoft SQL Server 2012 T-SQL Fundamentals 
+   (https://www.microsoftpressstore.com/store/microsoft-sql-server-2012-t-sql-fundamentals-9780735658141)
+
+----------------------------------------------------------------------------------------------------------------------------
+Section 1: 
+
+Modules 1: Introduction to Transact-SQL
+
+Getting Started with Transact-SQL
+What is Transact-SQL
+1. Structured Query Language (SQL)
+- Developed by IBM in 1970s
+- Adopted as a standard by ANSI and ISO standards bodies
+- Widely used in industry
+2. Microsoft's implementation is Transact-SQL
+- Referred to as T-SQL
+- Query language for SQL Server and Azure SQL Database
+
+Relational Databases
+1. Entities are represented as relations (tables), in which their attributes are represented as domains (columns)
+2. Most relational databases are normalized, with relationships defined between tables through primary and foreign keys
+
+Schema and Object Names
+1. Schemas are namespaces for database objects
+2. Fully-qualified names: [server_name.][database_name.][schema_name.]object_name
+3. Within database context, best practice is to include schema name: shema_name.object_name
+
+SQL Statement Types
+|---------------------------------|-------------------------------|----------------------------|
+| Data Manipulation Language(DML) | Data Definition Language(DDL) | Data Control Language(DCL) |
+|---------------------------------|-------------------------------|----------------------------|
+| Statements for querying and     | Statements for defining       | Statements for assigning   |
+| modifying data:                 | database objects:             | security permissions:      |
+|                                 |                               |                            |
+| - SELECT                        | - CREATE                      | - GRANT                    |
+| - INSERT                        | - ALTER                       | - REVOKE                   |
+| - UPDATA                        | - DROP                        | - DENY                     |
+| - DELETE                        |                               |                            |
+|---------------------------------|-------------------------------|----------------------------|
+ # This course is focus on DML.
+ 
+Key Points and Additional Reading
+ 1. Key Points
+ - Transact-SQL is the language used to query data in Microsoft SQL Server and Azure SQL Database.
+ - Data is stored in tables, which may be related to one another through common key fields.
+ - Objects in a database are organized into schemas.
+ - The fully qualified naming syntax for an object is server_name.database_name.schema_name.object_name, 
+   but in most cases you can abbreviate this to schema_name.object_name.
+2. Additional Reading
+- https://msdn.microsoft.com/en-us/library/bb510741.aspx
+ 
+The SELECT Statement
+
+  |----------|--------------------|----------------------------------|---------------|
+  | Element  | Expression         | Role                             | dplyr package |
+  |----------|--------------------|----------------------------------|---------------|
+5 | SELECT   | <select list>      | Defines which columns to return  | select()      |
+1 | FROM     | <table source>     | Defines table(s) to query        |               |
+2 | WHERE    | <search condition> | Filters rows using a predicate   | filter()      |
+3 | GROUP BY | <group by list>    | Arranges rows by groups          | group_by()    |
+4 | HAVING   | <search condition> | Filters groups using a predicate | filter()      |
+6 | ORDER BY | <order by list>    | Sorts the output                 | arrange()     |
+  |----------|--------------------|----------------------------------|---------------|
+
+For examples:
+SELECT OrderDate, COUNT(OrderID)
+FROM Sales.SalesOrder
+WHERE Status = 'Shipped'
+GROUP BY OrderDate
+HAVING COUNT (OrderID) > 1
+ORDER BY OrderDate DESC;
+
+Basic SELECT Query Examples
+- All columns
+  SELECT * FROM Prosuction.Product;
+  
+- Specific columns
+  SELECT Name, ListPrice
+  FROM Production.Product;
+  
+- Expressions and Aliases
+  SELECT Name AS Product, ListPrice * 0.9 AS SalePrice
+  FROM Production.Product;
+  
+Key Points and Additional Reading
+1. Key Points
+- Use the SELECT statement to retrieve a rowset of data from tables and views in a database.
+- SELECT statements are written with the following clauses: SELECT, FROM, WHERE. GROP BY, HAVING, ORDER BY.
+  However, the query engine processes the clauses in this order: FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY.
+- In the SELECT clause, you can use * to return all columns, but generally you should specify explicit columns.
+- You can specify expressions in the SELECT clause to return the results of calculations.
+- You can use the AS keyword to specify aliases for columns in the rowset returned by the SELECT statement.
+
+2. Additional Reading
+Review the documentation for SELECT in the Transact-SQL Reference.
+(https://msdn.microsoft.com/en-us/library/ms189499.aspx)
+ 
+Working with Data Types
+ 
+Transact-SQL Data Types
+|-----------------|---------------------|-----------|----------------|-----------|------------------|
+| Extract Numeric | Approximate Numeric | Character | Date/Time      | Binary    | Other            |
+|-----------------|---------------------|-----------|----------------|-----------|------------------|
+| tinyint         |float                | char      | date           | binary    | cursor           |
+| smallint        |real                 | varchar   | time           | varbinary | hierarchyid      |
+| int             |                     | text      | datetime       | image     | sql_variant      |
+| bigint          |                     | nchar     | datetime2      |           | table            |
+| bit             |                     | nvarchar  | smalldatetime  |           | timestamp        |
+| deciaml/numeric |                     | ntext     | datetimeoffset |           | uniqueidentifier |
+| numeric         |                     |           |                |           | xml              |
+| money           |                     |           |                |           | geography        |
+| smallmoney      |                     |           |                |           | geometry         |
+|-----------------|---------------------|-----------|----------------|-----------|------------------|
+
+Data Type Conversion
+1. Implicit Conversion
+   Compatible data types can be automatically converted
+2. Explicit Conversion
+   Requires an explicit conversion funcion
+   - CAST / TRY_CAST
+   - CONVERT / TRY_CONVERT
+   - PARSE / TRY_PARSE
+   - STR
+
+Key Point and Additional Reading
+1. Key Points
+- Transact-SQL supports a wide range of data types, which can be broadly categorized as exact numeric, 
+  approximate numeric, character, date/time, binary, and other 
+  (which includes specialized date typees for handling data such XML and spatial data).
+2. Additional Reading
+Review the documentation for Data Types and  Conversion Functions in the Transact-SQL Reference.
+- Data Types (https://msdn.microsoft.com/en-us/library/ms187752.aspx)
+- Conversion Functions (https://msdn.microsoft.com/en-us/library/hh231076.aspx)
+
+ 
+Working with NULLs
+ 
+NULL Values
+1. NULL represents a missing or unknown value
+2. ANSI behaviour for NULL values:
+- The result of any expression containing a NULL value is NULL
+  1. 2 + NULL = NULL
+  2. `MyString` + NULL = NULL
+- Equility comparisons always return false for NULL values
+  1. NULL = NULL returns false
+  2. NULL IS NULL returns true
+
+NULL Functions
+1. ISNULL (column/variable, value)
+   Return value if the column or variables is NULL
+2. NULLIF (column/variable, value)
+   Return NULL if the column or variable is value
+3. COALESCE (colum/variable1, column/variable2, ...)
+   Return the value of the first non-NULL column or variable in the list
+
+Key Points and Additional Reading
+1. Key Points
+- NULL is used to indicate an unknown or missing value. NULL is not equivalent to zero or an empty string.
+- Arithmetic or string concatenation operations involving one or more NULL operands return NULL. For example, 12 + NULL = NULL.
+- If you need to compare a value to NULL, use the IS operator instead of the = operator. 
+- The ISNULL function returns a specified alternative value for NULL columns and variables.
+- The NULLIF function returns NULL when a column or variable contains a specified value.
+- The COALESCE function returns the first non-NULL value in a specified list of columns or variables).
+- Additional Reading
+
+2. Review the documentation for the ISNULL function and Expressions in the Transact-SQL Reference.
+ISNULL (https://msdn.microsoft.com/en-us/library/ms184325.aspx)
+Expressions (https://msdn.microsoft.com/en-us/library/ms190286.aspx)
+
+-----------------------------------------------------------------
+Module 2: Querying Tables with SELECT
+
+Removing Duplicates
+1. SELECT ALL
+- Default behavior includes duplicates
+
+  SELECT Color
+  FROM Production.Product;
+  |--------|
+  | color  |
+  |--------|
+  | Blue   |
+  | Red    |
+  | Yellow |
+  | Blue   |
+  | Yellow |
+  | Black  |
+  |--------|
+
+2. SELECT DISTINCT
+- Removes duplicates
+
+  SELECT DISTINCT Color
+  FROM Production.Product:
+  |--------|
+  | color  |
+  |--------|
+  | Blue   |
+  | Red    |
+  | Yellow |
+  | Black  |
+  |--------|
+  
+Sorting Results
+1. Use ORDER BY to sort result by one or more columns
+- Aliases created in SELECT clause are visible to ORDER BY
+- You can order by columns in the source that are not included in the SELECT  clause
+- You can specigy ASC or DESC (ASC is the default)
+
+  |--------------------------------------------------|
+  | SELECT ProductCategory AS Category, ProductName  |
+  | FROM Production.Product                          |
+  | ORDER BY Category, Price DESC;                   |
+  |--------------------------------------------------|
+  
+Limiting Sorted Results
+1. TOP allows you to limit the number or percentage of rows returned by query
+2. Works with ORDER BY clause to limit rows by sore order
+3. Addded to SELECT clause:
+- SELECT TOP (N) | TOP (N) Percent
+  With percent, numbet of rows rounded up
+- SELECT TOP (N) WITH TIES
+  Retrieve duplicates where applicable (nondeterministic)
+  
+  |--------------------------------------|
+  | SELECT TOP 10 ProdectName, ListPrice |
+  | FROM Production.Product              |
+  | ORDER BY ListPrice DESC;             |
+  |--------------------------------------|
+
+Paging Sorted Results
+
+OFFSET-FETCH is an extension to the ORDER BY clause:
+1. Allows filtering a requested range of rows
+   Dependent on ORDER BY clause
+2. Provides a mechanism for paging through results
+3. Specigy number of rows to skip, number of rows to retrieve:
+s
+  |--------------------------------------------|
+  | ORDER BY <ordre_by_list>                   |
+  | OFFSET <offset_value> ROW(S)               |
+  | FETCH FIRST|NEXT <fetch_value> ROW(S) ONLY |
+  |--------------------------------------------|
+
+Key Points and Additional Reading
+1. Key Points
+- By default, the SELECT statement returns all rows. If multiple rows contain the same values for every column, they are duplicated in the results.
+  Using the DISTINCT keyword eliminates dupicates, ensuring that only one row for each distinct combination of column values is returned.
+- The order of rows in the result of a SELECT statement is not guaranteed unless you explicitly specify one or more columns in an ORDER BY clause.
+  You can specify sort direction as ASC(the default) or DESC.
+- You can combine the ORDER BY clause with the TOP keyword to retrict the results so that they include only the top n rows
+  (where n is the number or percentage of rows you want to return).
+- You can implement a query to retrueve a specified "page" of results by using the OFFSET and FETCH keywords with the ORDER BY clause.
+
+2. Additional Reading
+Review the documentation for the SELECT and ORDER BY clauses in the Transact-SQL Reference.
+SELECT (http://msdn.microsoft.com/en-us/library/ms189499.aspx)
+ORDER BY (https://msdn.microsoft.com/en-us/library/ms188385.aspx)
+
+DEMO
+- Display a list of product colors
+SELECT DISTINCT ISNULL(COLOR, 'None') AS Color FROM SalesLT.Product;
+
+- Display a list of product colors with the word 'None' if the value is null sorted by color
+SELECT DISTINCT ISNULL(Color, 'None') AS Color FROM SalesLT.Preduct ORDER BY Color;
+
+- Display a list of product colors with the word 'None' if the value is null and a dash if the size is null sorted by color
+SELECT DISTINCT ISNULL(Color, 'None') AS Color, ISNULL(Size, '-') AS Size FROM SalesLT.Product ORDER BY Color;
+
+- Display the top 100 products by list price 
+SELECT TOP 100 Name, ListPrice FROM SalesLT.Product ORDER BY ListPrice DESC;
+
+- Display the first ten product by product number
+SELECT Name, ListPrice FROM SalesLT.Product ORDER BY ProductNumber OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;
+
+- Display the next ten product by product number
+SELECT Name, ListPrice FROM SalesLT.Product ORDER BY ProductNumber OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY;
+
+Filtering and Using Predicates
+
+Specify predicates in the WHERE caluse
+|--------------------------|-------------------------------------------------------------|
+| Predicates and Operators | Description                                                 |
+|--------------------------|-------------------------------------------------------------|
+| = < >                    | Compares values for equality / non-equality                 |
+| IN                       | Determines whether a specified value matches any value in a |
+|                          | subquery or a list.                                         |
+| BETWEEN                  | Specitfies an inclusive range to test.                      |
+| LIKE                     | Determines whether a specific character string matches a    |
+|                          | specified pattern, which can include wildcards.             |
+| AND                      | Combines two Boolean expressions and returns TRUE only      |
+|                          | when both are TRUE.                                         |
+| OR                       | Combines two Boolean expressions and returns TRUE if either |
+|                          | is TRUE.                                                    |
+| NOT                      | Reverses the result of a search condition.                  |
+|--------------------------|-------------------------------------------------------------|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
