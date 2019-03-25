@@ -50,6 +50,130 @@ Review the documentation on Join Fundamentals in SQL Server 2008 R2 Books Online
 (https://technet.microsoft.com/en-us/library/ms191517(v=sql.105).aspx)
 
 Inner Joins
+1. Return only rows where a match is found in both input tables
+2. Match rows based on attributes supplied in predicate
+3. If join predicate operator is =, also known as equi-join
+  |--------------------------------------|
+  | SELECT emp.FirstName, ord.Amount     |
+  | FROM HR.Employee AS emp              |
+  | [INNER] JOIN Sales.SalesOrder AS ord |
+  | ON emp.EmployeeID = ord.EmployeeID   |
+  |--------------------------------------|
+
+DEMO
+- Basic inner join
+SELECT salesLT.Product.Name AS ProductName, SalesLT.ProductCategory.Name AS Category
+FROM SalesLT.Product
+INNER JOIN SalesLT.ProductCategory
+ON SAlesLT.Product.ProductCategoryID = SalesLT,ProductCategory.ProductCategoryID;
+
+- Table aliaes
+SELECT p.Name AS ProductName, c.Name AS Categroy
+FROM SalesLT.Product AS p
+JOIN SalesLT.ProductCategory AS c
+ON p.ProductCategoryID = c.ProductCategoryID;
+
+- Joining more than 2 tabels
+SELECT oh.OrderDate, oh.SalesOrderNumber, p.Name AS ProductName, od.OrderQty, od, UnitPrice, od.LIneTotal
+FROM SalesLT.SalesOrderHeader AS oh
+JOIN SalesLT.SalesOrderDetail AS od
+ON od.SalesOrderId = oh.SalesOrderID
+JOIN SalesLT.Product AS p
+ON od.PreductID = p.ProductID
+ORDER BY oh.OrderDatem oh.SalesOrderID, od.SalesOrderDetailID;
+
+- Multiple join predicates
+SELECT oh.OrderDate, oh.SalesOrderNumber, p.Name AS ProductName, od.OrderQty, od, UnitPrice, od.LIneTotal
+FROM SalesLT.SalesOrderHeader AS oh
+JOIN SalesLT.SalesOrderDetail AS od
+ON od.SalesOrderId = oh.SalesOrderID
+JOIN SalesLT.Product AS p
+ON od.PreductID = p.ProductID AND od.UnitePrice < p.ListPrice --Note multiple predicates
+ORDER BY oh.OrderDate, oh.SalesOrderID, od.SalesOrderDetailID;
+
+Key Points and Additional Reading
+1. Key POints
+- Inner joins return only rows where a match can be found in both tables.
+- Inner joins that rows based on columns containing the same value in both tables are sometimes referred to as equi-joins.
+
+2. Additional Reading
+Review the documentation on Using Inner Joins in SQL Server 2008 R2 Books Online.
+(https://technet.microsoft.com/en-us/library/ms190014(v=sql.105).aspx)
+
+Note that while this documentation is based on a previous release of SQL Server, 
+the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
+
+Outer Joins 
+1. Return all rows from one table and any matching rows from second table
+2. One table's rows are "preserved"
+- Designated with LEFT, RIGHT, FULL keyword
+- All rows from preserved table output to result set
+3. Matches from othe rtable retrieved
+4. Additional rows added to results for non-matched rows
+- NULLs added in places where attributes do not match
+5. Example: Return all tmployees and for those who have taken orders, return the order amount.
+   Employees without matching orders will display NULL for order amount.
+   |-------------------------------------------|
+   | SELECT emp.FirstName, ord.Amount          |
+   | FROM HR.Employee AS emp                   |
+   | LEFT [OUTER] JOIN Sales.SalesOrder AS ord |
+   | ON emp.EmployeeID = ord.EmployeeID;       |
+   |-------------------------------------------|
+
+DEMO
+- Get all customers, with sales orders for those who've bought anythin
+SELECT c.FirstName, c.LastName, oh.SalesOrderNumber
+FROM SalesLT.Customer AS c
+LEFT OUTER JOIN SalesLT.SalesOrderHeader AS oh
+ON c.CustmerID = oh.CustomerID;
+
+- Return only customers who haven't purchased anything
+SELECT c.FirstName, c.LastName, oh.SalesOrderNumber
+FROM SalesLT.Customer AS c
+LEFT OUTER JOIN SalesLT.SalesOrderHeader AS oh
+ON c.CustomerID = oh.CustomerID
+WHERE oh.SalesOrderNumber IS NULL
+ORDER BY c.CustomerID;
+
+- More than 2 tables
+SELECT p.Name AS ProductName, oh.SalesOrderNumber
+FROM SalesLT.Product AS p
+LEFT JOIN SalesLT.SalesOrderDetail AS od
+ON p.ProductID = od.ProductID
+LEFT JOIN SalesLT.SalesOrderHeader AS oh --Additional tabels added to the right must also use
+ON od.salesOrderID = oh.SalesOrderID
+ORDER BY p.ProductID;
+
+SELECT p.Name AS ProductName, c.Name AS Category, oh.SalesOrderNumber
+FROM SalesLT.Product AS p
+LEFT OUTER JOIN SalesLT.SalesOrderDetail AS od
+ON p.ProductID = od.ProductID
+LEFT OUTER JOIN SalesLT.SalesOrderHeader AS oh 
+ON od.salesOrderID = oh.SalesOrderID
+INNER JOIN SalesLT.ProductCategory AS c --Added to the left, so can use inner join
+ON p.ProductCategoryID = c.ProductCategoryID
+ORDER BY p.ProductID;
+
+Key Points and Additional Reading
+1. Key Points
+- Use a Left Outer Join to include all rows from the first table and values from matched rows in the second table. 
+  Columns in the second table for which no matching rows exist are populated with NULLs.
+- Use a Right Outer Join to include all rows from the second table and values from matched rows in the first table. 
+  Columns in the first table for which no matching rows exist are populated with NULLs.
+- Use a Full Outer Join to include all rows from the first and second tables. 
+  Columns in the either table for which no matching rows exist are populated with NULLs.
+
+2. Additional Reading
+Review the documentation on Using Outer Joins in SQL Server 2008 R2 Books Online.
+(https://technet.microsoft.com/en-us/library/ms187518(v=sql.105).aspx)
+
+Note that while this documentation is based on a previous release of SQL Server, 
+the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
+
+Cross Joins
+
+
+
 
 
 
