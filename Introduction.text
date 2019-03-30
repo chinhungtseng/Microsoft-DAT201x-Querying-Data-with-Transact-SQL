@@ -1,0 +1,39 @@
+DAT201x: Querying with Transact-SQL
+This is the ntoe with this course
+Student: chin hung tseng
+----------------------------------------------------------------------------------------------------------------------------
+Introduction
+
+Instructors: 
+1. Graeme Malcolm
+2. Geoff Allix
+
+Course Topics - Querying with Transact-SQL
+1. Introduction to Transact-SQL
+2. Querying Tables with SELECT
+3. Querying Multiple Tables with Joins
+4. Using Set Operators
+5. Using Funcitons and Aggregating Data
+6. Using Subqueries and APPLY
+7. Using Table Expressions
+8. Grouping Sets and Pivoting Data
+9. Modifing Data
+10. Programming with Transact-SQL
+11. Error Handing and Transactions
+
+Setting Exprctations
+1. Target Audience
+- Aspiring database professionals
+- Application developers
+- Anyone preparing for SQL Server certification exams
+2. Course Materials
+- Online videl presentations
+- Downloadable labs
+3. Suggested Approach
+- Complete each module and lab in turn
+- Engage with fellow students at Born To Learn
+
+Suggested Resources
+1. Transact-SQL Reference (https://msdn.microsoft.com/en-us/library/bb510741.aspx)
+2. The book: Microsoft SQL Server 2012 T-SQL Fundamentals 
+   (https://www.microsoftpressstore.com/store/microsoft-sql-server-2012-t-sql-fundamentals-9780735658141)

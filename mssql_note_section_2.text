@@ -171,13 +171,127 @@ Note that while this documentation is based on a previous release of SQL Server,
 the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
 
 Cross Joins
+1. Combine each row from first table with each row from second table
+2. All possible conbinations output
 
+   |------------------------|   |-----------------------|
+   |         Employee       |   |        Product        |
+   |------------|-----------|   |-----------|-----------|
+   | EmployeeID | FirstName |   | ProductID | Name      |
+   |------------|-----------|   |-----------|-----------|
+   | 1          | Dan       |   | 1         | Widget    |
+   | 2          | Alsha     |   | 2         | Gizmo     |
+   |------------|-----------|   |-----------|-----------|
+   
+   |---------------------------------------|
+   | SELECT emp.FirstName, prd.Name        |
+   | FROM HR.Employee AS emp               |
+   | CROSS JOIN Production.Product AS prd; |
+   |---------------------------------------|
+   
+   |------------------------|  
+   |          Result        |  
+   |------------|-----------|   
+   | FirstName  | Name      | 
+   |------------|-----------|   
+   | Dan        | Widget    |   
+   | Dan        | Gizmo     |  
+   | Alsha      | Widget    |  
+   | Alsha      | Gizmo     |  
+   |------------|-----------|
 
+3. Logical foundation for inner and outer joins
+- Inner join starts with Cartesian product, adds filter
+- Outer join takes Cartesian output, filtered, adds back non-matching rows(with NULL placeholders)
+4. Due to Cartesian product output, not typically a desired form of join 
+-Some useful exceptions:
+  -Table of numbers, generating data for testing
 
+DEMO
+-Call each customer once per product
+SELECT p.Name, c.FirstName, c.LastName, c.Phone
+FROM SalesLT.Product AS p
+CROSS JOIN SalesLT.Customer AS c;
 
+Key Points and Additional Reading
+1. Key Points
+- A cross join returns a Cartesian product that includes every combination of the selected columns from both tables.
+- While not commonly used in typical application processing, cross joins can be useful in some specialized scenarios
+  such as generating test data.
+2. Additional Reading
+- Review the documentation on Using Cross Joins in SQL Server 2008 R2 Books Online.
+  (https://technet.microsoft.com/en-us/library/ms190690(v=sql.105).aspx)
+  
+Self Joins
+1. Compare rows in same table to each other 
+2. Create two instance of same table in FROM clause
+- At least one alias required
+3. Example: Return all employees and the name of the employee's namager
 
+   |-------------------------------------|
+   |                Employee             |
+   |------------|-----------|------------|
+   | EmployeeID | FirstName | ManangerID |
+   |------------|-----------|------------|
+   | 1          | Dan       | NULL       |
+   | 2          | Aisha     | 1          |
+   | 3          | Rosie     | 1          |
+   | 4          | Naomi     | 3          |
+   |------------|-----------|------------|
+   
+   |------------------------------------|
+   | SELECT emp.FirstName AS Employee,  |
+   |        man.FirstName AS Manager    |
+   | FROM HR.Employee AS emp            |
+   | LEFT JOIN HR.Employee AS man       |
+   | ON emp.ManagerID = man.EmployeeID; |
+   |------------------------------------|
+   
+   |------------------------|
+   |           Result       |
+   |-----------|------------|
+   | Employee  | Mananger   |
+   |-----------|------------|
+   | Dan       | NULL       |
+   | Aisha     | Dan        |
+   | Rosie     | Dan        |
+   | Naomi     | Rosie      |
+   |-----------|------------|
 
+DEMO
+- note there's no employee table, so we'll create one for this example
+CREATE TABLE SalesLT.Employee
+(EmployeeID int IDENTITY PRIMARY KEY,
+EmployeeName nvarchar(256),
+ManagerID int);
+GO
 
+- Get salesperson from Customer table and generate managers
+INSERT INTO SalesLT.Employee (EmployeeName, ManagerID)
+SELECT DISTINCT Salesperson, NULLIF(CAST(RIGTH(SalesPerson, 1) AS INT), 0)
+FROM SalesLT.Cusomer;
+GO
+UPDATE SalesLT.Employee
+SET ManagerID = (SELECT MIN(EmployeeID) FROM SalesLT.Employee WHERE ManagerID IS NULL)
+WHERE ManagerID IS NULL
+AND EmployeeID > (SELECT MIN(EmployeeID) FROM SalesLT.Employee WHERE ManagerID IS NULL);
+GO
+
+- Here's the actual self-join demo
+SELECT e.EmployeeName, m.EmployeeName AS ManagerName
+FROM SalesLT.Employee AS e
+LEFT JOIN SalesLT AS m
+ON e.ManagerID = m.EmployeeID
+ORDER BY e.ManagerID;
+
+Key Points and Additional Reading
+1. KEY POINTS
+- A self-join is an inner, outer, or cross join that matches rows in a table to other rows in the same table. 
+- When defining a self-join, you must specify an alias for at least one instance of the table being joined.
+2. ADDITIONAL READING
+- Review the documentation on Using Self-Joins in SQL Server 2008 R2 Books Online.
+  (https://technet.microsoft.com/en-us/library/ms177490(v=sql.105).aspx)
+  
 
 
 
