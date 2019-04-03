@@ -15,14 +15,14 @@ Overview
 
 Join Concepts
 1. Combine rows from multiple tables by specifying matching criteria
-- Usually based on primary key - foreign key relationships
-- For example, return rows that combine data from the Employee and SalesOrder tables by matching the Employee.EmployeeID primary key
-  to the SalesOrder.EmployeeID foreign key
+   - Usually based on primary key - foreign key relationships
+   - For example, return rows that combine data from the Employee and SalesOrder tables by
+     matching the Employee.EmployeeID primary key to the SalesOrder.EmployeeID foreign key
 2. It helps to think of the tables as sets in a Venn diagram
 
 Join Syntax
 1. ANSI SQL-92
-- Tables joined by JOIN operator in FROM Clause
+  - Tables joined by JOIN operator in FROM Clause
   - Preferred syntax
   |--------------------------|
   | SELECT ...               |
@@ -31,7 +31,7 @@ Join Syntax
   |--------------------------|
 
 2. ANSI SQL-89
-- Tables joined by commas in FROM Clause
+  - Tables joined by commas in FROM Clause
   - Not recommended: Accidental Cartesian products!
   |--------------------------|
   | SELECT ...               |
@@ -41,13 +41,13 @@ Join Syntax
   
 Key Points and Additional Reading
 1. Key Points
-- Joins are used to match rows in one table to rows in another table.
-- The query engine supports two ways to define joins: the ANSI SQL-92 syntax (in which the join is specified in the FROM clause) 
-  and the older ANSI SQL-89 syntax (in which the join is specified in the WHERE clause). 
-  The ANSI SQL-92 syntax is the preferred approach.
+   - Joins are used to match rows in one table to rows in another table.
+   - The query engine supports two ways to define joins: the ANSI SQL-92 syntax (in which the join is specified in the FROM clause) 
+     and the older ANSI SQL-89 syntax (in which the join is specified in the WHERE clause). 
+     The ANSI SQL-92 syntax is the preferred approach.
 2. Additional Reading
-Review the documentation on Join Fundamentals in SQL Server 2008 R2 Books Online.
-(https://technet.microsoft.com/en-us/library/ms191517(v=sql.105).aspx)
+   - Review the documentation on Join Fundamentals in SQL Server 2008 R2 Books Online.
+     (https://technet.microsoft.com/en-us/library/ms191517(v=sql.105).aspx)
 
 Inner Joins
 1. Return only rows where a match is found in both input tables
@@ -93,12 +93,11 @@ ORDER BY oh.OrderDate, oh.SalesOrderID, od.SalesOrderDetailID;
 
 Key Points and Additional Reading
 1. Key POints
-- Inner joins return only rows where a match can be found in both tables.
-- Inner joins that rows based on columns containing the same value in both tables are sometimes referred to as equi-joins.
-
+   - Inner joins return only rows where a match can be found in both tables.
+   - Inner joins that rows based on columns containing the same value in both tables are sometimes referred to as equi-joins.
 2. Additional Reading
-Review the documentation on Using Inner Joins in SQL Server 2008 R2 Books Online.
-(https://technet.microsoft.com/en-us/library/ms190014(v=sql.105).aspx)
+   - Review the documentation on Using Inner Joins in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms190014(v=sql.105).aspx)
 
 Note that while this documentation is based on a previous release of SQL Server, 
 the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
@@ -106,11 +105,11 @@ the information it contains is still relevant for Transact-SQL queries in SQL Se
 Outer Joins 
 1. Return all rows from one table and any matching rows from second table
 2. One table's rows are "preserved"
-- Designated with LEFT, RIGHT, FULL keyword
-- All rows from preserved table output to result set
+   - Designated with LEFT, RIGHT, FULL keyword
+   - All rows from preserved table output to result set
 3. Matches from othe rtable retrieved
 4. Additional rows added to results for non-matched rows
-- NULLs added in places where attributes do not match
+   - NULLs added in places where attributes do not match
 5. Example: Return all tmployees and for those who have taken orders, return the order amount.
    Employees without matching orders will display NULL for order amount.
    |-------------------------------------------|
@@ -156,16 +155,16 @@ ORDER BY p.ProductID;
 
 Key Points and Additional Reading
 1. Key Points
-- Use a Left Outer Join to include all rows from the first table and values from matched rows in the second table. 
-  Columns in the second table for which no matching rows exist are populated with NULLs.
-- Use a Right Outer Join to include all rows from the second table and values from matched rows in the first table. 
-  Columns in the first table for which no matching rows exist are populated with NULLs.
-- Use a Full Outer Join to include all rows from the first and second tables. 
-  Columns in the either table for which no matching rows exist are populated with NULLs.
+   - Use a Left Outer Join to include all rows from the first table and values from matched rows in the second table. 
+     Columns in the second table for which no matching rows exist are populated with NULLs.
+   - Use a Right Outer Join to include all rows from the second table and values from matched rows in the first table. 
+     Columns in the first table for which no matching rows exist are populated with NULLs.
+   - Use a Full Outer Join to include all rows from the first and second tables. 
+     Columns in the either table for which no matching rows exist are populated with NULLs.
 
 2. Additional Reading
-Review the documentation on Using Outer Joins in SQL Server 2008 R2 Books Online.
-(https://technet.microsoft.com/en-us/library/ms187518(v=sql.105).aspx)
+   - Review the documentation on Using Outer Joins in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms187518(v=sql.105).aspx)
 
 Note that while this documentation is based on a previous release of SQL Server, 
 the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
@@ -201,11 +200,11 @@ Cross Joins
    |------------|-----------|
 
 3. Logical foundation for inner and outer joins
-- Inner join starts with Cartesian product, adds filter
-- Outer join takes Cartesian output, filtered, adds back non-matching rows(with NULL placeholders)
+   - Inner join starts with Cartesian product, adds filter
+   - Outer join takes Cartesian output, filtered, adds back non-matching rows(with NULL placeholders)
 4. Due to Cartesian product output, not typically a desired form of join 
--Some useful exceptions:
-  -Table of numbers, generating data for testing
+   -Some useful exceptions:
+     -Table of numbers, generating data for testing
 
 DEMO
 -Call each customer once per product
@@ -215,17 +214,17 @@ CROSS JOIN SalesLT.Customer AS c;
 
 Key Points and Additional Reading
 1. Key Points
-- A cross join returns a Cartesian product that includes every combination of the selected columns from both tables.
-- While not commonly used in typical application processing, cross joins can be useful in some specialized scenarios
-  such as generating test data.
+   - A cross join returns a Cartesian product that includes every combination of the selected columns from both tables.
+   - While not commonly used in typical application processing, cross joins can be useful in some specialized scenarios
+     such as generating test data.
 2. Additional Reading
-- Review the documentation on Using Cross Joins in SQL Server 2008 R2 Books Online.
-  (https://technet.microsoft.com/en-us/library/ms190690(v=sql.105).aspx)
+   - Review the documentation on Using Cross Joins in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms190690(v=sql.105).aspx)
   
 Self Joins
 1. Compare rows in same table to each other 
 2. Create two instance of same table in FROM clause
-- At least one alias required
+   - At least one alias required
 3. Example: Return all employees and the name of the employee's namager
 
    |-------------------------------------|
@@ -286,16 +285,58 @@ ORDER BY e.ManagerID;
 
 Key Points and Additional Reading
 1. KEY POINTS
-- A self-join is an inner, outer, or cross join that matches rows in a table to other rows in the same table. 
-- When defining a self-join, you must specify an alias for at least one instance of the table being joined.
+   - A self-join is an inner, outer, or cross join that matches rows in a table to other rows in the same table. 
+   - When defining a self-join, you must specify an alias for at least one instance of the table being joined.
 2. ADDITIONAL READING
-- Review the documentation on Using Self-Joins in SQL Server 2008 R2 Books Online.
-  (https://technet.microsoft.com/en-us/library/ms177490(v=sql.105).aspx)
+   - Review the documentation on Using Self-Joins in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms177490(v=sql.105).aspx)
   
+Modules 4: Using Set Operators
+
+Overeview
+- What are UNION Queries?
+- What are INTERSECT Queries?
+- what are EXCEPT Queries?
+
+What are UNION Queries?
+1. UNION returns a result set of distinct rows combined from all statements
+2. UNION removes duplicates during query processing (affect performance)
+3. UNION ALL return duplicates during query processing
+
+-- only distinct rows from both queries are returned 
+SELECT countryregion, city FROM HR.Employees
+UNION
+SELECT countryregion, city FROM Sales.Customers;
+
+UNION Guidelines
+1. Column aliases
+   - Must be expressed in first query
+2. Number of columns 
+   - Must be the same 
+3. Data tyeps
+   - Must be compatible for implicit conversion (or converted explicitly)
+
+DEMO
+SELECT FirstName, LastName, 'Employee' AS Type
+FROM SlesLT.Employees
+UNION 
+SELECT FirstName, LastName, 'Customer'
+FROM SalesLT.Cusomers
+ORDER BY LastName;
+
+Key Points and Additional Reading
+1. Key Points
+   - Use UNION to combine the rowsets returned by multiple queries.
+   - Each unioned query must rturn the same number of columns with copatible data types.
+   - By default, UNION eliminates duplicate rows. Specify the ALL option to include duplicates
+     (or to avoid the overhead of checking for dulplicates when you know in advance that there are none).
+2. Additional Reading
+   -Review the documentation on UNION in the Transact-SQL Reference.
+   (https://msdn.microsoft.com/en-us/library/ms180026.aspx)
 
 
 
-Modules 4
+
 Modules 5
 
 
