@@ -49,6 +49,8 @@ Key Points and Additional Reading
    - Review the documentation on Join Fundamentals in SQL Server 2008 R2 Books Online.
      (https://technet.microsoft.com/en-us/library/ms191517(v=sql.105).aspx)
 
+------------------------------------------------------------------------------
+
 Inner Joins
 1. Return only rows where a match is found in both input tables
 2. Match rows based on attributes supplied in predicate
@@ -101,6 +103,8 @@ Key Points and Additional Reading
 
 Note that while this documentation is based on a previous release of SQL Server, 
 the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
+
+------------------------------------------------------------------------------
 
 Outer Joins 
 1. Return all rows from one table and any matching rows from second table
@@ -168,6 +172,8 @@ Key Points and Additional Reading
 
 Note that while this documentation is based on a previous release of SQL Server, 
 the information it contains is still relevant for Transact-SQL queries in SQL Server and Azure SQL Database.
+
+------------------------------------------------------------------------------
 
 Cross Joins
 1. Combine each row from first table with each row from second table
@@ -291,6 +297,8 @@ Key Points and Additional Reading
    - Review the documentation on Using Self-Joins in SQL Server 2008 R2 Books Online.
    (https://technet.microsoft.com/en-us/library/ms177490(v=sql.105).aspx)
   
+------------------------------------------------------------------------------
+  
 Modules 4: Using Set Operators
 
 Overeview
@@ -333,9 +341,54 @@ Key Points and Additional Reading
 2. Additional Reading
    -Review the documentation on UNION in the Transact-SQL Reference.
    (https://msdn.microsoft.com/en-us/library/ms180026.aspx)
+   
+------------------------------------------------------------------------------
 
+INTERSECT and EXCEPT Queries
 
+What are INTERSECT Queries?
+- INTERSECT returns only distinct rows that appear in both result sets
+ |----------------------------------------------------------|
+ | -- only rows that exist in both queries will be returned |
+ | SELECT countryregion, city FROM HR.Employees             |
+ | INTERSECT                                                |
+ | SELECT countryregion, city FROM Sales.Customers;         |
+ |----------------------------------------------------------|
 
+What are EXCEPT Queries?
+- EXCEPT returns only distinct rows that appear in the first set but not the second
+  Order in which sets are specified matters
+ |--------------------------------------------------|
+ | -- only rows from Employees will be returned     |
+ | SELECT countryregion, city FROM HR.Employees     |
+ | EXCEPT                                           |
+ | SELECT countryregion, city FROM Sales.Customers; |
+ |--------------------------------------------------|
+ 
+DEMO
+-- INTERSECT
+SELECT FirstName, LastName
+FROM SlesLT.Employees
+INTERSECT
+SELECT FirstName, LastName
+FROM SalesLT.Cusomers
+
+-- EXCEPT
+SELECT FirstName, LastName
+FROM SlesLT.Employees
+EXCEPT
+SELECT FirstName, LastName
+FROM SalesLT.Cusomers
+
+Key Points and Additional Reading
+1. Key Points
+   - Use INTERSECT to return only rows that are returned by both queries.
+   - Use EXCEPT to return rows from the first query that are not returned by the second query.
+2. Additional Reading
+   - Review the documentation on EXCEPT and INTERSECT in the Transact-SQL Reference.
+   (https://msdn.microsoft.com/en-us/library/ms188055.aspx)
+
+------------------------------------------------------------------------------
 
 Modules 5
 
