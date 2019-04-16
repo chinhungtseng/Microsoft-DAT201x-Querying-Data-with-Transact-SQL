@@ -226,7 +226,9 @@ Key Points and Additional Reading
 2. Additional Reading
    - Review the documentation on Using Cross Joins in SQL Server 2008 R2 Books Online.
    (https://technet.microsoft.com/en-us/library/ms190690(v=sql.105).aspx)
-  
+
+------------------------------------------------------------------------------
+
 Self Joins
 1. Compare rows in same table to each other 
 2. Create two instance of same table in FROM clause
@@ -390,12 +392,262 @@ Key Points and Additional Reading
 
 ------------------------------------------------------------------------------
 
-Modules 5
+Modules 5: Using Functions and Aggregating Data
+
+Introduction to Built-In Functions
+
+ |-------------------|----------------------------------------------------------------------------------|
+ | Function Category | Description                                                                      |
+ |-------------------|----------------------------------------------------------------------------------|
+ | Scalar            | Operate on a single row, return a single value                                   |
+ | Logical           | Scalar functions that compare multiple values to determine a single output       | 
+ | Aggregate         | Take one or more input values, return a single summarizing value                 |
+ | Window            | Operate on a window (set) of rows                                                |
+ | Rowset            | Return a virtual table that can be used subsequently in a Transact-SQL statement |
+ |-------------------|----------------------------------------------------------------------------------|
+
+------------------------------------------------------------------------------
+Scalar Functions
+1. Opertae on elements from a single row as inputs, return a single value as output
+2. Return a single (scalar) value
+3. Can be used like an expression in queries
+4. May be deterministic or non-deterministic
+
+ |----------------------------|
+ | Scalar Function Categories |
+ |----------------------------|
+ | Configuration              |
+ | Conversion                 |
+ | Cursor                     |
+ | Date and Time              |
+ | Mathemetical               |
+ | Metadata                   |
+ | Security                   |
+ | String                     |
+ | System                     |
+ | System Statistical         |
+ | Text and Image             |
+ | ...                        |
+ |----------------------------|
+
+DEMO
+-- Scalar Function
+SELECT YEAR(sellStartDate) SellStartYear, ProductID, Name
+FROM SalesLT.Product
+ORDER BY SellStartYear;
+
+SELECT YEAR(sellStartDate) sellStartYear, DATENAME(mm, sellStartDate) sellStartMonth,
+       DAY(sellStartDate) sellStartDay, DATENAME(dw, sellStartDate) sellStartWeekday,
+       ProduceID, Name
+FROM SalesLT.Product
+ORDER BY SellStartYear;
+
+SELECT DATEDIFF(yy, sellStartDate, GETDATE()) YearsSold, ProductID, Name
+FROM SalesLT.Procuct
+ORDER BY ProductID;
+
+SELECT UPPER(Name) AS ProductName
+FROM SalesLT.Product;
+
+SELECT CONCAT(FirstName + ' ', LastName) AS FullName
+FROM SalesLT,Customer;
+
+SELECT Name, ProsuctNumber, LEFT(ProductNumber, 2) AS ProductType
+FROM SalesLT.Customer;
+
+SELECT Name, ProsuctNumber, LEFT(ProductNumber, 2) AS ProductType
+                            SUBSTRING(ProductNumber, CHARINDEX('-', ProductNumber) + 1, 4) AS ModelCode,
+                            SUBSTRING(ProductNumber, LEN(ProductNumber) - CHARINDEX('-', REVERSE(RIGHT(ProductNumber, 3))), + 2, 2) AS SizeCode
+FROM SalesLT.Product;
 
 
+Logical Functions
+- Output is determined by comparative logic
+   1. ISNUMERIC
+     |--------------------------------------------|
+     | SELECT ISNUMERIC('101.99') AS Is_a_Number; |
+     |--------------------------------------------|
+     
+   2. IIF
+     |-------------------------------------------------------------------------------|
+     | SELECT productid, listprice, IIF(listprice > 50, 'high', 'low') AS PricePoint |
+     | FROM Production.Product;                                                      |
+     |-------------------------------------------------------------------------------|
+     
+   3. CHOOSE
+     |------------------------------------------------------------------------------------------------|
+     | SELECT ProductName, Color, Size,                                                               |
+     |        CHOOSE(ProductCategoryID, 'Bikes', 'Components', 'Clothing', 'Accessories') AS Category |
+     | FROM Production.Product;                                                                       |
+     |------------------------------------------------------------------------------------------------|
+
+DEMO 
+-- Logical Functions
+SELECT Name, Size AS NumericSize
+FROM SalesLT.Product
+WHERE ISNUMERIC(Size) = 1;
+
+SELECT Name, IIF(ProductCategoryID IN (5, 6, 7), 'Bike', 'Other') ProductType
+FROM SalesLT.Produce;
+
+SELECT Name, IIF(ISNUMERIC(Size) = 1, 'Numeric', 'Non-Numeric') SizeType
+FROM SalesLT.Product;
+
+SELECT prd.Name AS ProductName, cat.Name AS Category,
+       CHOOSE(cat.ParentProductCategoryID, 'Bikes', 'Components', 'Clothing', 'Accessories') AS ProductType
+FROM SalesLT.Product AS prd
+JOIN SalesLT.ProductCategory AS cat
+ON prd.ProductCategoryID = cat.ProductCategoryID;
 
 
+Window Functions
+1. Functions applied to a window, or set of rows
+2. Include ranking, offset, aggregate and distribution functions
+   |------------------------------------------------------------|
+   | SELECT TOP(3) ProductID, Name, ListPrice,                  |
+   |        RANK() OVER(ORDER BY ListPrice DESC) AS RankByPrice |
+   | FROM Production.Product                                    |
+   | ORDER BY RankByPrice;                                     |
+   |------------------------------------------------------------|
+                                ||
+                                \/
+        |-----------|-----------|-----------|-------------|
+        | ProductID | Name      | ListPrice | RankByPrice |
+        |-----------|-----------|-----------|-------------|
+        | 8         | Gizmo     | 263.50    | 1           |
+        | 29        | Widget    | 123.79    | 2           |
+        | 9         | Thingybob | 97.00     | 3           |
+        |-----------|-----------|-----------|-------------|
+
+DEMO
+-- Window Functions
+SELECT TOP(100) ProductID, Name, ListPrice,
+       RANK() OVER(ORDER BY ListPrice DESC) AS RankByPrice
+FROM SalesLT.Product AS p
+ORDER BY RankByPrice;
+
+SELECT c.Name AS Category, p.Name AS Product, ListPrice,
+       RANK() OVER(PARTITION BY c.Name ORDER BY ListPrice DESC) AS RankByPrice
+FROM SalesLT.Product AS p
+JOIN SalesLT.ProductCategory AS c
+ON p.ProductCategoryID = c.ProductcategoryID
+ORDER BY Category, RankByPrice;
 
 
+Aggregate Functions
+1. Functions that operate on sets, or rows of data
+2. Summarize input rows
+3. Without GROUP BY clause, all rows are arranged as one group
+   |----------------------------------------------|
+   | SELECT COUNT(*) AS OrderLines,               |
+   |        SUM(OrderQty*UnitPrice) AS TotalSales |
+   | FROM Sales.OrderDetail;                      |
+   |----------------------------------------------|
+                           ||
+                           \/
+              |------------|-------------|
+              | OrderLines | TotalSales  |
+              |------------|-------------|
+              | 542        | 714002.9136 |
+              |------------|-------------|
+
+DEMO
+-- Aggregate Functions
+SELECT COUNT(*) AS Products, COUNT(DISTINCE ProductCategoryID) AS Categories, AVG(ListPrice) AS AveragePrice
+FROM SalesLT,Product;
+
+SELECT COUNT(p.ProductID) BikeMOdels, AVG(p.ListPrice) AveragePrice
+FROM SalesLT.Product AS p
+JOIN SalesLT.ProductCategory AS c
+ON p.ProductCatetoryID = c.ProductCategoryID
+WHERE c.Name LIKE '%Bikes';
 
 
+Key Points and Additional Reading
+1. Key Points
+   - Scalar functions return a single value based on zero or more input parameters.
+   - Logical functions return Boolean values (true or false) based on an expression or column value.
+   - Window functions are used to rank rows across partitions or "windows". Window functions include RANK, DENSE_RANK, NTILE, and ROW_NUMBER.
+   - Aggregate functions are used to provide summary values for multiple rows - 
+     for example, the total cost of products or the maximum number of items in an order.
+     Commonly used aggregate functions include SUM, COUNT, MIN, MAX, and AVG.
+2. Addtional Reading
+   Review the documentation on Built-In Functions in the Transact-SQL Reference.
+   (https://msdn.microsoft.com/en-us/library/ms174318.aspx)
+
+------------------------------------------------------------------------------
+
+Grouping with GROUP BY
+
+1. GROUP BY creates groups for output rows, according to a unique combination of values specified in the GROUP BY clause
+2. GROUP BY calculates a summary value for aggregate functions in subsequent phases
+3. Detail rows are "lost" after GROUP BY clause in processed
+   |---------------------------------------| 
+   | SELECT CustomerID, COUNT(*) AS Orders |
+   | FROM Sales.SalesOrderHeader           |
+   | GROUP BY CustomerID;                  |
+   |---------------------------------------| 
+
+DEMO
+SELECT c.Salesperson, ISNULL(SUM(oh.Subtotal), 0.00) SalesRevenue
+FROM SalesLT.Customer c
+LEFT JOIN SalesLT.SalesOrderHeader oh
+ON c.CustomerID = oh.CustomerID
+GROUP BY c.Salesperson
+ORDER BY SalesRevenue DESC;
+
+SELECT c.salesperson, CONCAT(c.FirstName + ' ', c.LastName) AS Customer, ISNULL(SUM(oh.SubTotal), 0.00) SalesRevenue
+FROM SalesLT.Customer c
+LEFT JOIN SlaesLT.SalesOrderHeader oh
+ON c.CustomerID = oh.CustomerID
+GROUP BY c.Salesperson, CONCAT(c.FirstName + ' ', c.LastName)
+ORDER BY SalesRevenue DESC, Custmer;
+   
+
+Filtering with HAVING
+
+1. HAVING clause provides a search condition that each group must satisfy
+2. WHERE clause is processed before GROUP BY, HAVING clause is processed after GROUP BY
+   |---------------------------------------|
+   | SELECT CustomerID, COUNT(*) AS Orders |
+   | FROM Sales.SalesOrderHeader           |
+   | GROUP BY CustomerID                   |
+   | HAVING COUNT(*) > 10;                 |
+   |---------------------------------------|
+
+DEMO
+SELECT ProductID, SUM(sod, OrderQty) AS Quantity
+FROM SalesLT.SalesOrderDetail AS sod
+JOIN SalesLT.SalesORderHeader AS soh
+ON sod.SalesOrderID = soh.SalesOrderID 
+WHERE YEAR(soh.OrderDate) = 2008 
+GROUP BY ProduceID
+
+SELECT ProductID, SUM(sod, OrderQty) AS Quantity
+FROM SalesLT.SalesOrderDetail AS sod
+JOIN SalesLT.SalesORderHeader AS soh
+ON sod.SalesOrderID = soh.SalesOrderID 
+WHERE YEAR(soh.OrderDate) = 2008 AND SUM(sod.OrderQty) > 50  # That will error!
+GROUP BY ProduceID
+
+SELECT ProductID, SUM(sod, OrderQty) AS Quantity
+FROM SalesLT.SalesOrderDetail AS sod
+JOIN SalesLT.SalesORderHeader AS soh
+ON sod.SalesOrderID = soh.SalesOrderID 
+WHERE YEAR(soh.OrderDate) = 2008
+GROUP BY ProduceID
+HAVING SUM(sod.OrderQty) > 50  # Without erro by adding HAVING clause
+
+Key Points and Additional Reading
+1. Key Points
+   - You can use GROUP BY with aggregate functions to retuern aggregations grouped by one or more columns or expressions.
+   - All columns in the SELECT clause that are not aggregate funciton expressions must be incluede in a GROUP BY clause.
+   - The order in which columns or expressions are listed in the GROUP BY clause determines the grouping hierarchy.
+   - You can filter the groups that are included in the query results by specifying a HAVING clause.
+2. Additional Reading
+   Review the documentation on GROUP BY and HAVING in the Transact-SQL Reference
+   - GROUP BY - (https://msdn.microsoft.com/en-us/library/ms177673.aspx)
+   - HAVING - (https://msdn.microsoft.com/en-us/library/ms180199.aspx)
+
+Note that this module has discussed only simple GROUP BY queries. 
+General GROUP BY clauses that include grouping sets, ROLLUP, or CUBE operators are covered later in the course

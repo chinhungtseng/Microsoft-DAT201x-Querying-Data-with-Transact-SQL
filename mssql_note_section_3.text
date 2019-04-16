@@ -1,0 +1,90 @@
+DAT201x: Querying with Transact-SQL
+This is the ntoe with this course
+Student: chin hung tseng
+----------------------------------------------------------------------------------------------------------------------------
+
+Module 6: Using Subqueries and APPLY
+
+Module Overview
+1. Introduciton to Subqueries
+2. Scalar or Multi-Valued?
+3. Self-Contained or Correlated?
+4. Using APPLY with Table-Valued Functions
+
+Introduction to Subqueries
+1. Subqueries are nested queries: queries within queries
+2. Results of inner query passed to outer query - Inner query acts like an expression from perspective of outer query
+   |---------------------------------------|
+   | SELECT * FROM ...                     |
+   |           /\                          |
+   |           ||                          |
+   |          |------------------------|   |
+   |          | SELECT * FROM ...      |   |
+   |          |                        |   |
+   |          |------------------------|   |
+   |---------------------------------------|
+
+Scalar or Multi-Valued?
+
+1. Scalar subquery returns single value to outer query
+   - Can be used anywhere single valued expression is used: SELECT, WHERE, and so on
+   |-------------------------------------------|
+   | SELECT orderid, productid, unitprice, qty |
+   | FROM Sales.OrderDetails                   |
+   | WHERE orderid =                           |
+   |       (SELECT MAX(orderid) AS lastorder   |
+   |        FROM Sales.Orders);                |
+   |-------------------------------------------|
+  
+2. Multi-valued subquery returns multiple values as a single column set to the outer query
+   - Used with IN predicate
+   |----------------------------------------|
+   | SELECT custid, orderid                 |
+   | FROM Sales.orders                      |
+   | WHERE custid IN (                      |
+   |      SELECT custid                     |
+   |      FROM Sales.Customers              |
+   |      WHERE countryregion = N'Mexico'); |
+   |----------------------------------------|
+   
+DEMO
+-- Display a list of products whose list price is higher than the ...
+SELECT MAX(UnitPrice) FROM SalesLT.SalesOrrderDetail #1467.01
+
+SELECT * FROM SalesLT.Product
+WHERE ListPride > 1467.01
+
+SELECT * FROM SalesLT.Product
+WHERE List Price > 
+(SELECT MAX(UnitPrice) FROM SalesLT.SalesOrderDetail)
+
+Key Points and Additional Reading
+1. Key Point
+   - Subqueries are Transact-SQL queries nested within an outer query.
+   - Scalar subqueries return a single value.
+   - Multu-valued subqueries return a single-column rowset.
+2. Additional Reading
+   Review the documentation on Subquery Fundamentals in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms189575(v=sql.105).aspx)
+   
+Note that while this documentation is based on a previous release of SQL Server, it is still relevant.
+
+----------------------------------------------------------------------------------
+
+Correlated Subqueries
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
