@@ -507,7 +507,7 @@ Window Functions
    | SELECT TOP(3) ProductID, Name, ListPrice,                  |
    |        RANK() OVER(ORDER BY ListPrice DESC) AS RankByPrice |
    | FROM Production.Product                                    |
-   | ORDER BY RankByPrice;                                     |
+   | ORDER BY RankByPrice;                                      |
    |------------------------------------------------------------|
                                 ||
                                 \/

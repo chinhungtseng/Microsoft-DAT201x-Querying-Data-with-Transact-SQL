@@ -73,18 +73,116 @@ Note that while this documentation is based on a previous release of SQL Server,
 
 Correlated Subqueries
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+Self-Contained or Correlated?
+1. Most subqueries are self-contained and have no connection with the outer query other than passing it results
+2. Correlated subqueries refer to elements of tables used in outer query
+   - Dependent on outer query, cannot be executed separately
+   - Behaves as if inner query is executed once per outer row
+   - May return scalar value or multiple values
+   |-----------------------------------------------|
+   | SELECT orderid, empid, orderdate              |
+   | FROM Sales.Orders AS O1                       |
+   | WHERE orderdate = (SELECT MAX(orderdata)      |
+   |                    FROM Sales.Orders AS O2    |
+   |                    WHERE O2.empid = O1.empid) |
+   | ORDER BY impid, orderdate;                    |
+   |-----------------------------------------------|
+                                  
+DEMO 
+-- For each customer list all sales on the last day that they made a ...
+
+SELECT CustomerID, SalesOrderID, OrderDate
+FROM SalesLT.SalesOrder AS SO1
+ORDER BY CustomerID, OrderDate
+
+SELECT CustomerID, SalesOrderID, OrderDate
+FROM SalesLT.SalesOrder AS SO1
+WHERE orderdate = 
+(SELECT MAX(orderdate)
+FROM SalesLT.SalesOrder)
+
+
+SELECT CustomerID, SalesOrderID, OrderDate
+FROM SalesLT.SalesOrder AS SO1
+WHERE orderdate = 
+(SELECT MAX(orderdate)
+FROM SalesLT.SalesOrder AS SO2
+WHERE SO2.CustomerID = SO1.CustomerID)
+ORDER BY CustomerID
+
+Key Points and Additional Reading
+1. Key Points
+   - Correlated subqueries reference objects in the outer query.
+2. Additional Reading
+   Review the documentation on Correlated Subqueries in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms187638(v=sql.105).aspx)
+
+----------------------------------------------------------------------------------
+
+The Apply Operator
+
+Using APPLY with Table-Valued Functions
+1. CROSS APPLY applies the right table expression to each row in left table
+   - Conceptually similar to CROSS JOIN between two tables but can correlate data between sources
+   |----------------------------------------------------------------------------|
+   | SELECT S.supplierid, S.companyname, P.productid, P.productnam, P.unitprice |
+   | FROM Production.Suppliers AS S                                             |
+   | CROSS APPLY dbo.fn_TopProductsByShipper(S.supplierid) AS P                 |
+   |----------------------------------------------------------------------------|
+
+2. OUTER APPLY adds rows for those with NULL in columns for right table
+   - Conceptually similar to LEFT OUTER JOIN between two tables
+
+DEMO
+-- Display the sales order details for items that are equal to the maximum unit price fro that sales order
+SELECT SOH.SalesOrderID, MUP.MaxUnitPrice
+FROM SalesLT.SalesOrderHeader AS SOH
+CROSS APPLY salesLT.udfMaxUnitPrice(SOH.SalesOrderID) AS MUP
+ORDER BY SOH.SalesOrderID
+
+Key Points and Additional Reading
+1. Key Points
+   - The APPLY operator enables you to execute a table-valued function for each row in a rowset returned by a SELECT statement.
+     Conceptually, this approach is similar to a correlated subquery.
+   - CROSS APPLY returns matching rows, similar to an inner join. 
+     OUTER APPLY returns all rows in the original SELECT query results with NULL values for rows where no match was found.
+2. Additional Reading
+   Review the documentation on Using Apply in SQL Server 2008 R2 Books Online.
+   (https://technet.microsoft.com/en-us/library/ms175156(v=sql.105).aspx)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
