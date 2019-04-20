@@ -1,5 +1,5 @@
 DAT201x: Querying with Transact-SQL
-This is the ntoe with this course
+This is the note for this course
 Student: chin hung tseng
 ----------------------------------------------------------------------------------------------------------------------------
 
@@ -10,6 +10,8 @@ Module Overview
 2. Scalar or Multi-Valued?
 3. Self-Contained or Correlated?
 4. Using APPLY with Table-Valued Functions
+
+------------------------------------------------------------------------------
 
 Introduction to Subqueries
 1. Subqueries are nested queries: queries within queries
@@ -150,39 +152,537 @@ Key Points and Additional Reading
    Review the documentation on Using Apply in SQL Server 2008 R2 Books Online.
    (https://technet.microsoft.com/en-us/library/ms175156(v=sql.105).aspx)
 
+----------------------------------------------------------------------------------------------------------------------------
+
+Module 7: Using Table Expressions
+
+Module Overivew
+1. View
+2. Temporary Tables
+3. Table Variables
+4. Table-Valued Functions
+5. Derived Tables
+6. Common Table Expressions
+
+------------------------------------------------------------------------------
+
+Querying View
+1. Views are named queries with definitions stored in a database 
+   - Views can provide abstraction, encapsulation and simplification
+   - From an administrative perspective, views can provide a security layer to a database
+   |-------------------------------------------------|
+   | CREATE VIEW Sales.vSalesOrders                  | 
+   | AS                                              |
+   | SELECT oh.OrderID, oh.Orderdata, oh.CustomerID, |
+   |        od.LineItemNo, od.ProductID, od.Quantity |
+   | FROM Sales.OrderHeaders AS oh                   |
+   | JOIN Sales.OrderDetails AS od                   |
+   | ON od.OrderID = oh.OrderID;                     |
+   |-------------------------------------------------|
+
+2. Views may be referenced in a SELECT statement just like a table
+   |---------------------------------------|
+   | SELECT OrderID, CustomerID, ProductID |
+   | FROM Sales.vSalesOrders                |
+   | ORDER BY OrderID;                     |
+   |---------------------------------------|
+
+DEMO
+-- Create a view
+CREATE VIEW SalesLT.vCustomerAddress
+AS
+SELECT C.CustomerID, FirstName, LastName, AddressLine1, City, StateProvince
+FROM 
+SalesLT.Customer C JOIN SalesLT.CustomerAddress CA
+ON C.CustomerID = CA.CustomerID
+JOIN SalesLT.Address A 
+ON CA.AddressID = A.AddressID
+
+-- Query the view
+SELECT CustomerID, City
+FROM SalesLT.vCustomerAddress
+
+-- Join the view to a table
+SELECT c.StateProvince, c.city, ISNULL(SUM(s.TotalDue), 0.00) AS Revenue
+FROM SalesLT.vCustomerAddress AS c
+LEFT JOIN SalesLT.SalesOrderHeader AS s
+ON s.CustomerID = c.CustomerID
+GROUP BY c.StateProvince, c.City
+ORDER BY c.StateProvince, Revenue DESC;
+
+Key Points and Additional Reading
+1. Key Points
+   - View are database objects that encapsulate SELECT queries.
+   - You can query a view in the same way as a table, however there are some considerations for updating them.
+2. Additional Reading
+   Review the documentation on CREATE VIEW in the Transact-SQL Language Reference.
+   (https://msdn.microsoft.com/en-us/library/ms187956.aspx)
+   
+------------------------------------------------------------------------------
+
+Using Temporary Tables and Table Variables
+
+Temporary Tables
+|-----------------------------------|
+| CREATE TABLE #tmpProducts         |
+| (ProductID INTEGER,               |
+|  ProductName varchar(50));        |
+| GO                                |
+| ...                               |
+| SELECT * FROM #tmpProducts;       |
+|-----------------------------------|
+
+1. Temporary tables are used to hold temporary result sets within a user's session
+   - Created in tempdb and deleted automatically
+   - Created with a # predix
+   - Global temporary tables are created with ## prefix
+   
+Table Variables
+|----------------------------------|
+| DECLARE @varProducts table       |
+| (ProductID INTEGER,              |
+|  ProductName varchar(50));       |
+| ...                              |
+| SELECT * FROM @varProducts;      |
+|----------------------------------|
+
+1. Introduced because temporary table can cause recompilations
+2. Used similarly to temporary tables but scoped to the batch
+3. Use only on very small datasets
 
 
+DEMO
+-- Temporary table
+CREATE TABLE #Colors
+(Color varchar(15));
+
+INSERT INTO #Colors
+SELECT DISTINCT Color FROM SalesLT.Product;
+
+SELECT * FROM #Colors;
+
+-- Table variable
+DECLARE @Colors AS TABLE (Color varchar(15));
+
+INSERT INTO @Colors
+SELECT DISTINCT Color FROM SalesLT.Product;
+
+SELECT * FROM @Colors;
+
+-- New batch
+SELECT * FROM #Colors;
+
+SELECT * FROM @Colors; -- now out of scope
+
+Key Points and Additional Reading
+1. Key Points
+   - Temporary tables are prefixed with a # symbol 
+     (You can also create global temporary tables that can be accessed by other processes by prefixing the name with ##)
+   - Local temporary tables are automatically deleted when the session in which they were created ends.
+     Global temporary tables are deleted when the last user sessions referencing them is closed.
+   - Table variables are prefixed with a @ symbol.
+   - Table variables are scoped to the batch in which they are created.
+2. Additional Reading
+   Review the documentation for the table data type in the Transact-SQL Language Reference.
+   (https://msdn.microsoft.com/en-us/library/ms175010.aspx)
+
+------------------------------------------------------------------------------
+
+Querying Table-Valued Functions
+
+Table-Valued Functions
+|--------------------------------------------------------------|
+| CREATE FUNCTION Sales.fn_GetOrderItems (@OrderID AS Integer) |
+| RETURNS TABLE                                                |
+| AS                                                           |
+| RETURN                                                       |
+| (SELECT ProductID, UnitPrice, Quantity                       |
+| FROM Sales.OrderDetails                                      |
+| WHERE OrderID = @OrderID);                                   |
+| ...                                                          |
+| SELECT * FROM Sales.fn_GetOrderItems (1025) AS LineItems;    |
+|--------------------------------------------------------------|
+
+1. TVFs are named objects with definitions stored in a database
+2. TVFs return a virtual table to the calling query
+3. Unlike views, TVFs support input parameters - TVFs may be thought of as parameterized views
+
+DEMO
+
+CREATE FUNCTION SalesLT.udfCustomersByCity (@City AS VARCHAR(20))
+RETURNS TABLE
+AS
+RETURN
+(SELECT C.CustomerID, FirstName, LastName, AddressLine1, City, StateProvince
+ FROM SalesLT.Customer C JOIN SalesLT.CustomerAddress CA
+ ON C.CustomerID = CA.CustomerID
+ JOIN SalesLT.Address A on CA.AddressID = A.AddressID
+ WHERE City = @City);
+ 
+SELECT * FROM SalesLT.udfCustomersByCity('Bellevue')
+
+Key Points and Additional Reading
+1. Key Points
+   - Table-Valued Function(TVFs) are functions that return a rowset.
+   - TVFs can be parameterized
+2. Additional Reading
+   Review the documentation on Table-Valued User-Defined Functions in SQL Server 2008 R2 Books Online.
+   (https://msdn.microsoft.com/en-us/library/ms191165(v=sql.105).aspx)
+
+------------------------------------------------------------------------------
+
+Using Derived Tables
+
+Derived Tables - Introduction
+|--------------------------------------------------------|
+| SELECT orderyear, COUNT(DISTINCT custid) AS cust_count |
+| FROM                                                   |
+|     (SELECT YEAR(orderdate) AS orderyear, custid       |
+|      FROM Sales.Orders) AS derived_year                |
+| GROUP BY orderyear;                                    |
+|--------------------------------------------------------|
+
+1. Derived tables are named query expressions created within an outer SELECT statement
+2. Not stroed in database - represents a virtual relational table
+3. Scope of a derived table is the query in which it is defined
+
+Derived Tables - Guidelines
+1. Derived table MUST:
+   - Have an alias
+   - Have unique names for all columns
+   - Not use an ORDER BY clause (without TOP or OFFSET/FETCH)
+   - Not be referred to multiple times in the same query
+
+2. Derived tables MAY:
+   - Use internal or external aliases for columns
+   - Refer to parameters and/or variables
+   - Be nested within other derived tables
+   
+Derived Tables - Specifying Column Aliases
+1. Column aliases may be defined inline:
+   |--------------------------------------------------------|
+   | SELECT orderyear, COUNT(DISTINCT custid) AS cust_count |
+   | FROM (SELECT YEAR(orderdate) AS orderyear, custid      |
+   |       FROM Sales.Orders) AS derived_year               |
+   | GROUP BY orderyear;                                    |
+   |--------------------------------------------------------|
+2. Or externally:
+   |--------------------------------------------------------|
+   | SELECT orderyear, COUNT(DISTINCT custid) AS cust_count |
+   | FROM (SELECT YEAR(orderdate), custid                   |
+   |       FROM Sales.Orders) AS                            |
+   |       derived_year(orderyear, custid)                  |
+   | GROUP BY orderyear;                                    |
+   |--------------------------------------------------------|
+
+DEMO
+
+SELECT Category, COUNT(ProductID) AS Products
+FROM
+    (SELECT p.ProductID, p.Name AS Product, c.Name AS Category
+     FROM SalesLT.Product AS p
+     JOIN SalesLT.ProductCategory AS c
+     ON p.ProductCategoryID = c.ProductCategoryID) AS ProdCats
+GROUP BY Category
+ORDER BY Category;
 
 
+Using Common Table Expressions
+
+Common Table Expressions (CTEs)
+|--------------------------------------------------------|
+| WITH CTE_year(OrderYear, CustID)                       |
+| AS                                                     |
+| (                                                      |
+|     SELECT YEAR(orderdate), custid                     |
+|     FROM Sales.Orders                                  |
+| )                                                      |
+| SELECT OrderYear, COUNT(DISTINCT CustID) AS Cust_Count |
+| FROM CTE_year                                          |
+| GROUP BY orderyear;                                    |
+|--------------------------------------------------------|
+
+1. CTEs are named table expressions defined in a query
+2. CTEs are similar to derived tables in scope and naming requirements
+3. Unlike derived tables, CTEs support multiple references and recursion
+
+Common Table Expressions - Recursion
+|------------------------------------------------------------------------|
+| WITH OrgReport (ManagerID, EmployeeID, EmployeeName, Level)            |
+| AS                                                                     |
+| (                                                                      |
+|         SELECT e.ManagerID, e.EmployeeID, EmployeeName, 0              |
+|         FROM HR.Employee AS e                                          |
+|         WHERE ManagerID IS NULL                                        |
+|         UNION ALL                                                      |
+|         SELECT e.ManagerID, e.EmpoyeeID, e.EmployeeName, Level + 1     |
+|         FROM HR.Employee AS e                                          |
+|         INNER JOIN OrgReport AS o ON e.ManagerID = o.EmployeeID        |
+| (                                                                      |
+| SELECT * FROM OrgReport                                                |
+| OPTION (MAXRECURSION 3);                                               |
+|------------------------------------------------------------------------|
+
+1. Specify a query for the anchor (root) level
+2. Use UNION ALL to add a recursive query for other levels
+
+DEMO
+
+-- Using a CTE
+WITH ProductsByCategory (ProductID, ProductName, Category)
+AS
+(
+     SELECT P.ProductID, p.Name, c.Name AS Category
+     FROM SalesLT.Product AS p
+     JOIN SalesLT.ProductCategory AS c
+     ON p.ProductCategroyID = c.ProductCategroyID
+)
+
+SELECT Category, COUNT(ProductID) AS Products
+FROM ProductsByCategory
+GOURP BY Category
+ORDER BY Category;
+
+-- Recursive CTE
+SELECT * FROM SalesLT.Employee
+
+-- Using the CTE to perform recursion
+WITH OrgReport (ManagerID, EmployeeID, EmployeeName, Level) 
+AS
+(
+     -- Anchor query
+     SELECT e.ManagerID, e.EmployeeID, EmployeeName, 0
+     FROM SalesLT.Employee AS e
+     WHERE ManagerID IS NULL
+     
+     UNION ALL
+     
+     -- Recursive query
+     SELECT e.ManagerID, e.EmployeeID, e.EmployeeName, Level + 1
+     FROM SalesLT.Employee AS e
+     INNER JOIN OrgReport AS o ON e.ManagerID = o.EmployeeID
+)
+
+SELECT * FROM OrgReport
+OPTION (MAXRECURSION 3);
+
+Key Points and Additional Reading
+1. Key Points
+   - A derived table is a subquery that generates a multicolumn rowset. 
+     You must use the AS caluse to define an alias for a derived query.
+   - Common Table Expressions (CTEs) provide a more intuitive syntax or defining rowsets than derived tables ,
+     and can be used multiple times in the same query.
+   - You can use CTEs to define recursive queries.
+2. Additional Reading
+   Review the documentation on WITH common_table_expression in the Transact-SQL Language Reference.
+   (https://msdn.microsoft.com/en-us/library/ms175972.aspx)
+   
+----------------------------------------------------------------------------------------------------------------------------
+
+Module 8: Grouping Sets and Pivoting Data
+
+Module Overview 
+1. Grouping Sets
+2. ROLLUP and CUBE
+3. Identifying Groupings in Results
+4. Pivoting Data
+5. Using PIVOT and UNPIVOT
+
+------------------------------------------------------------------------------
+
+Grouping Sets
+
+Grouping Sets - Syntax
+1. GROUPING SETS subclause builds on GROUP BY clause
+2. Allows multiple groupings to be defined in same query
+   |------------------------------------------------------------------|
+   | SELECT <column list with aggregate(s)>                           |
+   | FROM <source>                                                    |
+   | GROUP BY                                                         |
+   | GROUPING SETS                                                    |
+   | (                                                                |
+   |      <column_name>, --one or more columns                        |
+   |      <column_name>, --one or more columns                        |
+   |      () -- empty paraentheses if aggregating all rows            |
+   | );                                                               |
+   |------------------------------------------------------------------|
+
+Grouping Sets - Example
+   |------------------------------------------------------------------|
+   | SELECT EmployeeID, CustomerID, SUM(Amount) AS TotalAmount        |
+   | FROM Sales.SalesOrder                                            |
+   | GROUP BY                                                         |
+   | GROUPING SETS(EmployeeID, CustomerID, ());                       |
+   |------------------------------------------------------------------|
+                      ||
+                      \/  
+   |------------|------------|-------------|
+   | EmployeeID | CustomerID | TotalAmount |
+   |------------|------------|-------------|
+   | NULL       | NULL       | 256.23      | ---- Total for all sales
+   | NULL       | 1          | 49.99       | -|
+   | NULL       | 2          | 107.49      |  |-- Subtotals for each customer
+   | NULL       | 3          | 98.75       | -|
+   | 1          | NULL       | 107.49      | -|-- Subtotals for each employee
+   | 2          | NULL       | 148.74      | -|
+   |------------|------------|-------------|
 
 
+ROLLUP and CUBE
+1. ROLLUP provides shortcut for defining grouping sets with combinations that assume input columns form a hierarchy
+   |------------------------------------------------------------|
+   | SELECT StateProvince, City, COUNT(CustomerID) AS Customers |
+   | FROM Sales.vCustomerDetails                                |
+   | GROUP BY ROLLUP(StateProvince, City)                       |
+   | ORDER BY StateProvince, City;                              |
+   |------------------------------------------------------------|
+2. CUBE provides shortcut for defining grouping sets in which all possible combinations of grouping sets created
+   |------------------------------------------------------------------|
+   | SELECT SalesPersonName, CustomerName, SUM(Amount) AS TotalAmount |
+   | FROM Sales.vSalesOrders                                          |
+   | GROUP BY CUBE(SalesPersonName, CustomerName)                     |
+   | ORDER BY SalesPersonName, CustomerName;                          |
+   |------------------------------------------------------------------|
+
+Identifying Groupings in Results
+1. Multiple grouping sets present a problem in identifying the source of each row in the result set
+2. NULLs could come from the source data or could be a placeholder in the grouping set
+3. The GROUPING_ID function provides a method to mark a row with a 1 or 0 to identify which grouping set for the row
+   |------------------------------------------------------------------|
+   | SELECT GROUPING_ID(SalesPersonName) AS SalesPersonGroup,         |
+   |        GROUPING_ID(CustomerName) AS CustomerGroup,               |
+   |        SalesPersonName, CustomerName, SUM(Amount) AS TotalAmount |
+   | FROM Sales.vSalesOrders                                          |
+   | GROUP BY CUBE(SalesPersonName, CustomerName)                     |
+   | ORDER BY SalesPersonName, CustomerName;                          |
+   |------------------------------------------------------------------|
+
+DEMO
+
+SELECT cat.ParentProductCategoryName, cat.ProductCategoryName, COUNT(prd.ProductID) AS Products
+FROM SalesLT.vGetAllCategories AS cat
+LEFT JOIN SalesLT.Product AS prd
+ON prd.ProductCategoryID = cat.ProductCategoryID
+-- GROUP BY GROUPING SETS(cat.ParentProductCategoryName, cat.ProductCategoryName, ())
+-- GROUP BY ROLLUP (cat.ParentProductCategoryName, cat.ProductCategoryName)
+-- GROUP BY CUBE (cat.ParentProductCategoryName, cat.ProductCategoryName)
+ORDER BY cat.ParentProductCategoryName, cat.ProductCategoryName;
+
+Key Points and Additional Reading
+1. Key Points
+   - Use GROUPING SETS to define custom groupings.
+   - Use ROLLUP to include subtotals and grand total for hierarchical groupings.
+   - Use CUBE to include all possible groupings.
+2. Additional Reading
+   Review the documentation on GROUP BY in the Transact-SQL Language Reference.
+   (https://msdn.microsoft.com/en-us/library/ms177673.aspx)
+   
+------------------------------------------------------------------------------
+
+Pivoting Data
+1. Pivoting data is rotating data from a rows-based orientation to a columns- based orientation
+2. Distinct values from a single column are projected across as headings for other columns - may include aggregation
+
+   |---------|-----------|-------------|---------|
+   | OrderID | ProductID | Category    | Revenue |
+   |---------|-----------|-------------|---------|
+   | 1023    | 1         | Bikes       | 1078.75 |
+   | 1023    | 15        | Accessories | 52.00   |
+   | 1023    | 21        | Accessories | 124.90  |
+   | 1024    | 1         | Bikes       | 2491.00 |
+   | 1025    | 3         | Bikes       | 1067.49 |
+   | 1025    | 15        | Accessories | 125.99  |
+   | 1025    | 35        | Clothing    | 26.57   |
+   | 1025    | 36        | Clothing    | 5.78    |
+   |---------|-----------|-------------|---------|
+                         ||
+                         ||
+   |----------------------------------------------------------------------------------|
+   | SELECT OrderID, Bikes, Accessories, Clothing                                     |
+   | FROM                                                                             |
+   |     (SELECT OrderID, Category, Revenue FROM Sales.SalesDetails) AS sales         |
+   | PIVOT (SUM(Revenue) FOR Category IN ([Bikes], [Accessories], [Clothing])) AS pvt |
+   |----------------------------------------------------------------------------------|
+                         ||
+                         \/
+   |---------|---------|-------------|----------|
+   | OrderID | Bikes   | Accessories | Clothing |
+   |---------|---------|-------------|----------|
+   | 1023    | 1078.75 | 176.90      | NULL     |
+   | 1024    | 2491.00 | NULL        | NULL     |
+   | 1025    | 1067.49 | 125.99      | 32.35    |
+   |---------|---------|-------------|----------|
 
 
+Unpivoting Data
+1. Unpivoting dada is rotating data from a columns-based orientation to a rows-based orientation
+2. Spreads or splits values from one source row into one or more target rows
+3. Each source row becomes one or more rows in result set based on number of columns being pivoted
+   |---------|---------|-------------|----------|
+   | OrderID | Bikes   | Accessories | Clothing |
+   |---------|---------|-------------|----------|
+   | 1023    | 1078.75 | 176.90      | NULL     |
+   | 1024    | 2491.00 | NULL        | NULL     |
+   | 1025    | 1067.49 | 125.99      | 32.35    |
+   |---------|---------|-------------|----------|
+                         ||
+                         ||
+   |----------------------------------------------------------------------------------|
+   | SELECT OrderID, Category, Revenue                                                |
+   | FROM                                                                             | 
+   | (SELECT OrderID, Bikes, Accessories, Clothing FROM Sales.SaelsByCat) AS pvt      |
+   | UNPIVOT (Revenue FOR Category IN ([Bikes], [Accessories], [Clothing])) AS unpvt  |
+   |----------------------------------------------------------------------------------|
+                         ||
+                         \/
+   |---------|-------------|---------|
+   | OrderID | Category    | Revenue |
+   |---------|-------------|---------|
+   | 1023    | Bikes       | 1078.75 |
+   | 1023    | Accessories | 176.90  |
+   | 1024    | Bikes       | 2491.00 |
+   | 1023    | Bikes       | 1067.49 |
+   | 1025    | Accessories | 125.99  |
+   | 1025    | Clothing    | 32.35   |
+   |---------|-------------|---------|
 
+DEMO
+-- Pivot 
+SELECT * FROM 
+(SELECT P.ProductID, PC.Name, ISNULL(P.Colorm, 'Uncolored') AS Color
+ FROM SalesLT.ProductCategory AS PC
+ JOIN SalesLT.Product AS P
+ ON PC.ProductCategoryID = P.ProductCategoryID
+) AS PPC
+PIVOT (COUNT(ProductID) FOR Color IN ([Red], [Blue], [Black], [Silver], [Yellow], [Gray], [Multi], [Uncolored]))
+ORDER BY Name;
 
+-- Unpivot
+CREATE TABLE #ProductColorPivot
+(Name VARCHAR(50), Red int, Blue int, Black int, Silver int, Yellow int, Grey int, Multi int, Uncolored int)
 
+INSERT INTO #ProductColorPivot
+SELECT * FROM 
+(SELECT P.ProductID, PC.Name, ISNULL(P.Colorm, 'Uncolored') AS Color
+ FROM SalesLT.ProductCategory AS PC
+ JOIN SalesLT.Product AS P
+ ON PC.ProductCategoryID = P.ProductCategoryID
+) AS PPC
+PIVOT (COUNT(ProductID) FOR Color IN ([Red], [Blue], [Black], [Silver], [Yellow], [Gray], [Multi], [Uncolored]))
+ORDER BY Name;
 
+SELECT Name, Color, ProductCount
+FROM
+(SELECT Name,
+ [Red], [Blue], [Black], [Silver], [Yellow], [Gray], [Multi], [Uncolored]
+ FROM #ProductColorPivot) pcp
+ UNPIVOT
+(ProductCount FOR Color IN ([Red], [Blue], [Black], [Silver], [Yellow], [Gray], [Multi], [Uncolored])) AS ProductCounts
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
+Key Points and Additional Reading
+1. Key Points
+   - Use PIVOT to re-orient a rowset by generating multiple columns from values in a single column.
+   - Use UNPIVOT to re-orient multiple columns in an existing rowset into a single column.
+2. Additional Reading
+   Review the documentation on Using PIVOT and UNPIVOT in SQL Server 2008 R2 Books Online
+   (https://technet.microsoft.com/en-us/library/ms177410(v=sql.105).aspx)
