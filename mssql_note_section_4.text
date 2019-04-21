@@ -5,4 +5,835 @@ Student: chin hung tseng
 
 Module 9: Modifying Data
 
+Module Overview
+1. Inserting Data into Tables
+2. 1. Inserting Data into Tables
+3. Updating Data in Tables
+4. Deleting Data in Tables
 
+------------------------------------------------------------------------------
+
+Inserting Data into Tables
+1. INSERT...VALUES
+   - Inserts explicit values
+   - You can omit identity columns, columns that allow NULL, and columns with default constraints
+   - You can also explicitly specify NULL and DEFAULT
+2. INSERT...SELECT / INSET...EXEC
+   - Inserts the results returned by the query or stored procedure into an existing table
+3. SELECT...INTO
+   - Creates a new table from the results of a query
+   - Not currently supported in Azure SQL Database
+
+
+Generating Identifiers
+
+Using Identity Columns
+  IDENTITY property of a column generates sequential numbers automatically for insertion into a table
+1. Can specify optional seed and increment values
+2. Use system variables and functions to return last inserted identity:
+   - @@IDENTITY: The last identity generated in the session
+   - SCOPE_IDENTITY(): The last identity generated in the current scope
+   - IDENT_CURRNET('<table_name>'): The last identity inserted into a table
+     |-----------------------------------------------------|
+     | INSERT INTO Sales.Orders(CustomerID, Amount)        |
+     | VALUES                                              |
+     | (12, 2056.99);                                      |
+     | ...                                                 |
+     | SELECT SCOPE_IDENTITY() AS OrderID;                 |
+     |-----------------------------------------------------|
+
+Using Sequences
+  Sequences are objects that generate swquential numbers
+  1. Supported in SQL Server 2012 and later
+  2. Exist independently of tables, so offer greater flexibility than Idnetity
+  3. Use SELECT NEXT VALUE FOR to retrieve the next sequential number
+     - Can be set as the default value for a column
+     |---------------------------------------------------|
+     | CREATE SEQUENCE Sales.OrderNumbers AS INT         |
+     | START WITH 1 INCREMENT BY 1;                      |
+     | ...                                               |
+     | SELECT NEXT VALUE FOR sales.OrderNumbers;         |
+     |---------------------------------------------------|
+     
+DEMO
+-- Create a table for demo
+CREATE TABLE SalesLT.CallLog
+(
+   CallID int IDENTITY PRIMARY KEY NOT NULL,
+   CallTime datatime NOT NULL DEFAULT GETDATE(),
+   SalesPerson nvarchar(256) NOT NULL,
+   CustomerID int NOT NULL REFERENCES SalesLT.Customer(CustomerID),
+   PhoneNumber nvarchar(25) NOT NULL,
+   Notes nvarchar(max) NULL
+);
+GO
+
+-- Insert a row
+INSERT INTO SalesLT.CallLog
+VALUES
+('2015-01-01T12:30:00', 'adventure-works\pamela0', 1,  '245-555-0773', 'Returning call re: enquiry about delivery');
+
+SELECT * FROM SalesLT.CallLog;
+
+-- Insert defaults and nulls
+INSERT INTO SalesLT.CallLog
+VALUES
+(DEFAULT, 'adventure-works\david8', 2, '170-555-0127', NULL);
+
+SELECT * FROM SalesLT.CallLog;
+
+-- Insert a row with explicit columns
+INSERT INTO SalesLT.CallLog(SalesPersonm CustomerID, PhoneNumber)
+VALUES
+('adventure-work\jillian0', 3, '279-555-0130');
+
+SELECT * FROM SalesLT.CallLog;
+     
+-- Insert multiple rows
+INSERT INTO SalesLT.Calling
+VALUES
+(DATEADD(mi, -2, GETDATE()), 'adventure-works\jillian0', 4, '710-555-0173', NULL),
+(DEFAULT, 'adventure-works\shu0', 5, '828-555-0186', 'Called to arrange deliver of order 10987');
+
+SELECT * FROM SalesLT.CallLog;
+
+-- Insert the results of a query
+INSERT INTO SalesLT.CallLog(SalesPerson, CustomerID, PhoneNumber, Notes)
+SELECT SalesPerson, CustomerID, Phone, 'Sales promotion call'
+FROM SalesLT.Customer
+WHERE CompanyName = 'Big-Time Fike Store';
+
+SELECT * FROM SalesLT.CallLog;
+
+-- Retireving inserted identity
+INSERT INTO SalesLT.CallLog(SalesPerson, CustomerID, PhoneNumber)
+VALUES
+('adventure-work\jose1', 10, '150-555-0127');
+
+SELECT SCOPE_IDENTITY();
+
+SELECT * FROM SalesLT.CallLog;
+
+-- Overriding Identity
+SET IDENTITY_INSET SalesLT.CallLog ON;
+
+INSERT INTO SalesLT.CallLog(CallID, SalesPerson, CustomerID, PhoneNumer)
+VALUES
+(9, 'adventure-work\jose1', 11, '926-555-0159');
+
+SET IDENTITY_INSERT SaelsLT.CallLog OFF;
+
+SELECT * FROM SalesLT.CallLog;
+
+Key Points and Additional Reading
+1. Key Points
+   - Use the INSERT statement to insert one or more rows into a table.
+   - When inserting explicit values, you can omit idnetity columns, columns that allow NULLs,
+     and columns on which a default constraint is defined.
+   - Identity columns generate a unique integer identifier for each row.
+     You can also use a sequence to generate unique values that can be used in  multiple tables.
+2. Additional Reading
+   Review the documentation on INSERT, IDENTITY in the Transact-SQL Language Reference,
+   and Sequence Numbers in SQL Server Books Online
+   - INSERT (https://msdn.microsoft.com/en-us/library/ms174335.aspx)
+   - IDENTITY (https://msdn.microsoft.com/en-us/library/ms186775.aspx)
+   - Sequence Numbers (https://msdn.microsoft.com/en-us/library/ff878058.aspx)
+
+------------------------------------------------------------------------------
+
+Updating and Deleting Data
+
+The UPDATE Statement
+  1. Updates all rows in a table or view
+     - Set can be filtered with a WHERE clause
+     - Set can be defined with a FROM clause
+  2. Only columns specified in the SET clause are modified
+  |------------------------------------------------------|
+  | UPDATE Production.Product                            |
+  | SET unitprice = (unitprice * 1.04)                   |
+  | WHERE categoryid = 1 AND discontinued = 0;           |
+  |------------------------------------------------------|
+
+The MERGE Statement 
+  MERGE modifies data based on a condition
+  - When the source matches the target
+  - When the source has no match in the target
+  - When the target has no match in the source
+  |----------------------------------------------------------------------------------|
+  | MERGE INTO Production.Products as P                                              |
+  |       USING Production.ProductsStaging as S                                      |
+  |       ON P.ProductID = S.ProductID                                               |
+  | WHEN MATCHED THEN                                                                |
+  |       UPDATE SET                                                                 |
+  |       P.UnitPrice = S.UnitPrice, P.Discontinued = S.Discontinued                 |
+  | WHEN NOT MATCHED THEN                                                            |
+  |       INSERT (ProductName, CategoryID, UnitPrice, Discontinued)                  |
+  |       VALUES (S.ProductName, S.CategoryID, S.UnitPrice, S.Discontinued);         |
+  |----------------------------------------------------------------------------------|
+
+
+
+Deleting Data From a Tables
+1. DELETE without a WHERE clause deletes all rows
+   - Use a WHERE clause to delete specific rows
+   |----------------------------------------|
+   | DELETE FROM Sales.OrderDetails         |
+   | WHERE orderid = 10248;                 |
+   |----------------------------------------|
+2. TRUNCATE TABLE clears the entire table
+   - Storage physically deallocated, rows not individually removed
+   - Minimally logged
+   - Can be rolled bach if TRUNCATE issues within a transaction 
+   - TRUNCATE TABLE wll fail if the table is referenced by a foreign key constraint in another table
+
+DEMO
+-- Update a table
+UPDATE SalesLT.CallLog
+SET Notes = 'No notes'
+WHERE Notes IS NULL;
+
+SELECT * FROM SaelsLT.CallLog;
+
+-- Update multiple columns
+UPDATE SalesLT.CallLog
+SET SalesPerson = '', PhoneNumver = '';
+
+SELECT * FROM SaelsLT.CallLog;
+
+-- Update from results of a query
+UPDATE SalesLT.CallLog
+SET SalesPerson = c.SalesPerson, PhoneNumber = c.Phone
+FROM SalesLT.Customer AS c
+WHERE c.CustomerID = SalesLT.CallLog.CustomerID;
+
+SELECT * FROM SaelsLT.CallLog;
+
+-- Delete rows
+DELETE FROM SalesLT.CallLog
+WHERE CallTime < DATEADD(dd, -7, GETDATE());
+
+SELECT * FROM SaelsLT.CallLog;
+
+-- Truncate the table
+TRUNCATE TABLE SalesLt.Callog;
+
+SELECT * FROM SaelsLT.CallLog;
+
+Key Points and Additional Reading
+1. Key Points
+   - Use the UPDATE statement to modify the values of one or more cloumns in specified rows of a table.
+   - Use the DELETE statement to delete specified rows in a table.
+   - Use the MERGE statement to insert, update and delete rows in target table based on data in source table.
+2. Additional Reading
+   Review the documentation on UPDATE, DELETE, and MERGE in the Transact-SQL Language Reference.
+   UPDATE (https://msdn.microsoft.com/en-us/library/ms177523.aspx)
+   DELETE (https://msdn.microsoft.com/en-us/library/ms189835.aspx)
+   MERGE (https://msdn.microsoft.com/en-us/library/bb510625.aspx)
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Module 10: Programming with Transact-SQL
+
+Module Overview
+1. Batches
+2. Comments
+3. Variables
+4. Conditional Branching
+5. Loops
+6. Stored Procedures
+
+------------------------------------------------------------------------------
+
+Batches
+1. Batches are sets of commands sent to SQL Server as a unit
+2. Batches determine variables scope, name resolution
+3. To separate statements into batches, use a separator:
+   - SQL Server tools use the GO keyword
+   - GO is not a T-SQL command!
+   - GO[count] executes the batch the specified number of times
+   |--------------------------------------------|
+   | SELECT * FROM Production.Product;          |
+   | SELECT * FROM Sales.Customer;              |
+   | GO                                         |
+   |--------------------------------------------|
+
+
+
+Comments
+1. Marks T-SQL code as a comment:
+   - For a block, enclose it between /* and */ characters
+   |---------------------------------------------|
+   | /*                                          |
+   |           This is a block                   |
+   |          of commented code                  |
+   | */                                          |
+   |---------------------------------------------|
+2. For inline text, precede the comments with --
+   |---------------------------------------------|
+   |                                             |
+   | -- This line of text will be ignored        |
+   |                                             |
+   |---------------------------------------------|
+3. T-SQL Editors typically color-code comments, as shown above
+
+
+
+Variables
+1. Variables are objects that allow storage of a value for use later in the same batch
+2. Variables are defined with the DECLARE keyword
+   - Variables can be declared and initialized in the same statement
+3. Variables are always local to the batch in which they're declared and go out of scope when the batch ends
+
+   |--------------------------------------------------------------------------|
+   | -- Declare and initialize variables                                      |
+   | DECLARE @color nvarchar(15) = 'Black', @size nvarchar(5) = 'L';          |
+   |                                                                          |
+   | -- Use variables in statements                                           |
+   | SELECT * FROM Production.Product                                         |
+   | WHERE Color = @color and Size = @size;                                   |
+   | GO                                                                       |
+   |--------------------------------------------------------------------------|
+  
+DEMO
+-- Search by city using a variable
+DECLARE @City VARCHAR(20) = 'Toronto'
+-- Set @City = 'Bellevue'
+
+GO -- Need to remove GO for just one statements
+
+SELECT FirstName + ' ' + LastName AS [Name], AddressLine1 AS Address, City
+FROM SalesLT.Customer AS C
+JOIN SalesLT.CustomerAddress AS CA
+ON C.CustomerID = CA.CustomerID
+JOIN SalesLT.Address As A
+ON CA.AddressID = A.AddressID
+WHERE City = @City
+
+-- Use a variable as an output
+DECLARE @Result money
+SELECT @Result = MAX(TotalDue)
+FROM SalesLT.SalesOrderHeader
+
+PRINT @Result
+
+Key Points and Additional Reading
+1. Key Points
+   - A batch defines a group of Transact-SQL command submitted by a client application for execution.
+     Some commands can only be executed at the start of a new batch, and variable values cannot span batches.
+   - Use comments to document your Transact-SQL code. 
+     Inline comments are prefixed by --,
+     and multi-line comment bolcks are enclosed in /* and */.
+   - Declare variables by using the DECLARE keyword, specifying a name (Prefixed with @) and a data type.
+     You can optionally assign an initial value.
+   - Assign values to variables by using the SET keyword or in a SELECT statement.
+2. Additional Reading
+   Review the documentation on --, /*..*/, and  Variables in the Transact-SQL Language Reference.
+   --: (https://msdn.microsoft.com/en-us/library/ms181627.aspx)
+   /*..*/: (https://msdn.microsoft.com/en-us/library/ms178623.aspx)
+   Variables: (https://msdn.microsoft.com/en-us/library/ff848809.aspx)
+
+------------------------------------------------------------------------------
+
+Conditional Branching
+  IF...ELSE uses a predicate to determine the flow of the code
+  - The code in the IF block is executed if the predicate evaluates to TRUE
+  - The code in the ELSE block is executed if the predicate evaluates to FALSE or UNKNOWN
+  |-----------------------------------------------------|
+  | IF @color is NULL                                   |
+  |    SELECT * FROM Production.Product;                |
+  | ELSE                                                |
+  |    SELECT * FROM Production.Product                 |
+  |    WHERE Color = @color;                            | 
+  |-----------------------------------------------------|
+
+DEMO
+-- simple logical test 
+IF 'Yes' = 'No'
+Print 'True'
+
+-- Change code based on a condition
+UPDATE SalesLT.Product
+SET DiscontinueDate = GETDATE()
+WHERE ProductID = 680;
+
+IF @@ROWCOUNT < 1
+BEGIN
+  PRINT 'Product was not found'
+END
+ELSE
+BEGIN
+  PRINT 'Product Updated'
+END
+
+Key Points and Additional Reading
+1. Key Points
+   - Use the IF keyword to execute a task based on the results of a conditional test.
+   - Use ELSE clause if you need to execute an alternative task if the conditional test return false.
+   - Enclose multiple statementsin an IF or ELSE clause between BEGIN and END keywords.
+2. Additional Reading
+   Review the documentation on IF...ELSE and BEGIN...END in the Transact-SQL Language Reference.
+   IF...ELSE: (https://msdn.microsoft.com/en-us/library/ms182717.aspx)
+   BEGIN...END: (https://msdn.microsoft.com/en-us/library/ms190487.aspx)
+
+------------------------------------------------------------------------------
+
+Looping
+
+1. WHILE enables code to execute in a loop
+2. Statements in the WHILE block repeat as the predicate evaluates to TRUE
+3. The loop ends when the predicate evaluates to FALSE or UNKNOWN
+4. Execution can be altered by BREAK or CONTINUE
+   |--------------------------------------------------------------|
+   | DECLARE @custid AS INT = 1, @lname AS NVARCHAR(20);          |
+   | WHILE @custid <= 5                                           |
+   |   BEGIN                                                      |
+   |     SELECT @lname = lastname FROM Sales.Customer             |
+   |     WHERE customerid = @custid;                              |
+   |     PRINT @lname;                                            |
+   |     SET @custid += 1;                                        |
+   |   END;                                                       |
+   |--------------------------------------------------------------|
+
+DEMO
+
+DECLARE @Counter int = 1
+WHILE @Counter <= 5
+BEGIN
+  INSERT SalesLT.DemoTable(Description)
+  VALUES ('ROW' + CONVERT(VARCHAR(5), @Counter))
+  SET @Counter = @Counter + 1
+END;
+
+Key Points and Additional Reading
+1. Key Points
+   - Use a WHILE loop if you need to repeat one or more statements until a specified condition is true.
+   - Use BREAK and CONTINUE to exit or restart the loop.
+   - Avoid using loops to iteratively update or retrieve single records - in most cases,
+     you should use set-based operations to retrieve and modify data.
+2. Additional Reading
+   Review the documentation on WHILE, BREAK, and CONTINUE in the Transact-SQL Language Reference.
+   WHILE: (https://msdn.microsoft.com/en-us/library/ms178642.aspx)
+   BREAK: (https://msdn.microsoft.com/en-us/library/ms181271.aspx)
+   CONTINUE: (https://msdn.microsoft.com/en-us/library/ms174366.aspx)
+   
+------------------------------------------------------------------------------
+
+Stored Procedures
+1. Database objects that encapsulate Transact-SQL code
+2. Can be parameterized
+   - Input parameters
+   - Output parameters
+   |--------------------------------------------------------------------------------|
+   | CREATE PROCEDURE SalesLT.GetProductsByCategory(@CategoryID INT = NULL)         |
+   | AS                                                                             |
+   | IF @CategoryID is NULL                                                         |
+   |    SELECT ProductID, Name, Color, Size, ListPrice                              |
+   |    FROM SalesLT.Product                                                        |
+   | ELSE                                                                           |
+   |    SELECT ProductID, Name, Color, Size, ListPrice                              |
+   |    FROM SalesLT.Product                                                        |
+   |    WHERE ProductCategoryID = @CategoryID;                                      |
+   |--------------------------------------------------------------------------------|
+3. Executed with the EXECUTE command
+   |--------------------------------------------------------------------------------|
+   |                                                                                |
+   | EXECUTE SalesLT.GetProductsByCategory 6;                                       |
+   |                                                                                |
+   |--------------------------------------------------------------------------------|
+
+DEMO
+-- Create a stroed procedure
+CREATE PROCEDURE SalesLT.GetProductsByCategory (@CategoryID INT = NULL)
+AS
+IF @CategoryID is NULL
+   SELECT ProductID, Name, Color, Size, ListPrice
+   FROM SalesLT.Product
+ELSE
+   SELECT ProductID, Name, Color, Size, ListPrice 
+   FROM SalesLT.Product
+   WHERE ProductCategoryID = @CategoryID;
+
+-- Execute the procedure without a parameter
+EXEC SalesLT.GetProductsByCategory;
+
+-- Execute the procedure with a parameter
+EXEC SalesLT.GetProductsByCategory 6;  
+
+Key Points and Addtional Reading
+1. Key Points
+   - Use stored procedures to encapsulate Transact-SQL code in a reuseable database objects.
+   - You can define parameters for a stored procedure, and use them as variables in the Transact-SQL code it contains.
+   - Stored procedures can return rowsets (usually the results of a SELECT statement).
+     They can also return output parameters, and they always return a 'return value', thich is used to indicate status.
+2. Additional Reading
+   Review the documentation on Stored Procedures in SQL Server Books Online.
+   (https://msdn.microsoft.com/en-us/library/ms190782.aspx)
+
+----------------------------------------------------------------------------------------------------------------------------
+
+Module 11: Error Handling and Transactions
+
+Module Overview
+1. Errors and Error Messages
+2. Raising Errors
+3. Catching and Handling Errors
+4. Introduction to Transactions
+5. Implementing Explicit Transactions
+
+------------------------------------------------------------------------------
+
+Errors and Error Messages
+|-----------------------------------------------------------------------------------------|
+|                           Elements of Database Engine Errors                            |
+|---------------|-------------------------------------------------------------------------|
+| Error number  | Unique number identifying the specific error                            |
+|               |                                                                         |
+| Error message | Text describing the error                                               |
+|               |                                                                         |
+| Severity      | Numeric indication of seriousness from 1-25                             |
+|               |                                                                         |
+| State         | Internal state code for the database engine condition                   |
+|               |                                                                         |
+| Procedure     | The name of the stored procedure or trigger in which the error occurred |
+|               |                                                                         |
+| Line number   | Which statement in the batch or procedure generated the error           |
+|---------------|-------------------------------------------------------------------------|
+
+In SQL Server (NOT Azure SQL Database):
+- Error messages are in sys.messages
+- You can add custom messages using sp_addmessage
+
+
+
+Raising Errors
+1. The RAISERROR command
+   - Raise a user-defined error in sys.messages(SQL only)
+   - Raise an explicit error message, severity, and state (SQL Server and Azure SQL Database)
+   |-------------------------------------------------|
+   |                                                 |
+   | RAISERROR('An Error Occurred', 16, 0);          |
+   |                                                 |
+   |-------------------------------------------------|
+2. The THROW Command
+   - Replacement for RAISERROR
+   - Throw explicit error number, message, and state(severity is 16)
+   - Re-throw existing error
+   |-------------------------------------------------|
+   |                                                 |
+   | THROW 50001, 'An Error Occurred', 0;            |
+   |                                                 |
+   |-------------------------------------------------|
+
+DEMO
+-- View a system error
+INSERT INTO SalesLT.salesOrderDetail (SalesOrderID, OrderQty, ProductID, UnitPrice, UnitPriceDiscount)
+VALUES
+(100000, 1, 680, 1431.50, 0.00);
+           ||
+           \/
+Msg 547, Level 16, State 0, Line 2
+The INSERT statement conflicted with the FOREIGN KEY constraint "..." ... 
+The statement has been terminated.
+
+-- Raise an error with PARSERROR
+UPDATE SalesLT.Product
+SET DiscontinuedDate = GETDATE()
+WHERE ProductID = 0;
+
+IF @@ROWCOUNT < 1
+   RAISERROR('The product was not found - no products have been updated', 16, 0);
+           ||
+           \/
+(0 row(s) affected)
+Msg 50000, Level 16, State 0, Line 16
+The product was not found - no products have been updated
+
+-- Raise an error with THROW
+UPDATE SalesLT.Product
+SET DiscontinuedDate = GETDATE()
+WHERE ProductID = 0;
+
+IF @@ROWCOUNT < 1
+   THROW 50001, 'The product was not found - no products have been updated', 0;
+           ||
+           \/
+(0 row(s) affected)
+Msg 50001, Level 16, State 0, Line 28
+The product was not found - no products have been updated
+
+Key Points and Additional Reading
+1. Key Points 
+   - System errors have pre-defined numbers, messages, severity levels, and other characteristics that you can use to troubleshoot issues.
+   - You can use RAISERROR and THROW to raise custom errors.
+2. Additional Reading
+   Review the documentation on RAISERROR and THROW in the Transact-SQL Language Reference.
+   RAISERROR: (https://msdn.microsoft.com/en-us/library/ms178592.aspx)
+   THROW: (https://msdn.microsoft.com/en-us/library/ee677615.aspx)
+
+------------------------------------------------------------------------------
+
+Catching and Handling Errors
+
+1. Use TRY...CATCH block
+2. Handle errors in the CATCH block
+   - Get error information:
+     - @@ERROR
+     - ERROR_NUMBER()
+     - ERROR_MESSAGE()
+     - ERROR_SEVERITY()
+     - ERROR_STATE()
+     - ERROR_PROCEDURE()
+     - ERROR_LINE()
+  - Execute custom correction or logging code
+  - Re-throw the original error, or thorw a custom error
+  |-----------------------------------------------------|
+  | DECLARE @Discount INT = 0;                          |
+  | BEGIN TRY                                           |
+  |   UPDATE Production.Product                         |
+  |   SET Price = Price / @Discount                     |
+  | END TRY                                             |
+  | BEGIN CATCH                                         |
+  |   PTINT ERROR_MESSAGE();                            |
+  |   THROW 50001, 'An error occurred', 0;              |
+  | END CATCH;                                          |
+  |-----------------------------------------------------|
+
+DEMO
+-- Catch an error
+BEGIN TRY
+  UPDATE SalesLT.Product
+  SET ProductNumber = ProductID / ISNULL(Weight, 0);
+END TRY
+BEGIN CATCH
+  PRINT 'The following error occurred:';
+  PRINT ERROR_MESSAGE();
+END CATCH;
+           ||
+           \/
+|-------------------------------------------------------------------------------------------|
+| (0 row(s) affected)                                                                       |
+| The following error occurred:                                                             |
+| Divide by error encountered.                                                              |
+|-------------------------------------------------------------------------------------------|
+
+-- Catch and rethrow
+BEGIN TRY
+  UPDATE SalesLT.Product
+  SET ProductNumber = ProducID / ISNULL(Weight, 0);
+END TRY
+BEGIN CATCH
+  PRINT 'The following error occurred:';
+  PRINT ERROR_MESSAGE();
+  THROW;
+END CATCH;
+           ||
+           \/
+|--------------------------------------------------------------------------------------------|
+| (0 row(s) affected)                                                                        |
+| The following error occurred:                                                              |
+| Divide by error encountered.                                                               |
+| Msg 8134, Level 16, State 1, Line 13  -- The client only saw these two line error messages.|
+| Divide by error encountered.                                                               |
+|--------------------------------------------------------------------------------------------|
+
+-- Catch, log, and throw a custom error
+BEGIN TRY
+  UPDATE SalesLT.Product
+  SET ProductNumber = ProducID / ISNULL(Weight, 0);
+END TRY
+BEGIN CATCH
+  DECLARE @ErrorLogID AS INT, @ErrorMsg AS VARCHAR(250);
+  EXECUTE dbo.uspLogError @ErrorLogID OUTPUT;
+  SET @ErrorMsg = 'The update failed because of an error. View error #'
+                  + CAST(@ErrorLogID AS VARCHAR)
+                  + ' in the error log for details.';
+  THROW 50001, @ErrorMsg, 0;
+END CATCH;
+-- Location: uspLogError -> Programmability -> Stored Procedures -> uspLogError
+           ||
+           \/
+|--------------------------------------------------------------------------------------------|
+| (0 row(s) affected).                                                                       |
+| Msg 50001, Level 16, State 1, Line 33                                                      |
+| The update failed because of an error. View error #1 in the error log for details.         |
+|--------------------------------------------------------------------------------------------|
+
+-- View the error log
+SELECT * FROM dbo.ErrorLog;
+
+Key Points and Additional Reading 
+1. Key Points
+   - Use TRY...CATCH blocks in your Transact-SQL code to catch and handle exceptions.
+   - A common exception handling pattern is to log the error, and then if the operation cannot be completed successfully,
+     throw it (or a new custom error) to the calling application.
+2. Additional Reading
+   Review the documentation on TRY...CATCH in the Transact-SQL Language Reference.
+   (https://msdn.microsoft.com/en-us/library/ms175976.aspx)
+
+------------------------------------------------------------------------------
+
+Transactions
+
+Introduction to Transactions
+1. A transaction is a group of tasks defining a unit of work
+2. The entire unit must succeed or fail together - no partial completion is permitted
+   |----------------------------------------------------------|
+   | Two tasks that make up a unit of work                    |
+   | INSERT INTO Sales.Order ...                              |
+   | INSERT INTO Sales.OrderDetail ...                        |
+   |----------------------------------------------------------|
+3. Individual data modification statements are automatically treated as standalone transactions
+4. SQL Server uses locking mechanisms and th transaction log to support transactions
+
+Implementing Explicit Transactions
+1. Use BEGIN TRANSACTION to start a transaction
+2. Use COMMIT TRANSACTION to complete a transaction
+3. Use ROLLBACK TRANSACTION to cancel a transaction
+   - Or enable XACT_ABORT to automatically rollback on error
+4. Use @@TRANSCOUNT and XACT_STATE() to check transaction status
+   |----------------------------------------------------------|
+   | BEGIN TRY                                                |
+   |   BEGIN TRANSACTION                                      |
+   |     INSERT INTO Sales.Order ...                          |
+   |     INSERT INTO Sales.OrderDetail ...                    |
+   |   COMMIT TRANSACTION                                     |
+   | END TRY                                                  |
+   | BEGIN CATCH                                              |
+   |   IF @@TRANCOUNT > 0                                     |
+   |   BEGIN                                                  |
+   |     ROLLBACK TRANSACTION                                 |
+   |   END                                                    |
+   |   PRINT ERROR_MESSAGE();                                 |
+   |   THROW 50001, 'An error occurred', 0'                   |
+   | END CATCH;                                               |
+   |----------------------------------------------------------|
+
+DEMO
+-- No transaction
+BEGIN TRY
+  INSERT INTO SalesLT.SalesOrderHeader (DueDate, customerID, shipMethod)
+  VALUES
+  (DATEADD(dd, 7, GETDATE()), 1, 'STD DELIVERY');
+  
+  DECLARE @SalesOrderID int = SCOPE_IDENTITY();
+  
+  INSERT INTO SalesLT.SalesOrderDetail(SalesOrderId, OrderQty, ProductID, UnitPrice, UnitPriceDiscount)
+  VALUES
+  (@SalesOrderID, 1, 99999, 1431.50, 0.00);
+END TRY
+BEGIN CATCH
+  PRINT ERROR_MESSAGE();
+END CATCH;
+           ||
+           \/
+|--------------------------------------------------------------------------------------------|
+| (1 row(s) affected).                                                                       |
+| (0 row(s) affected).                                                                       |
+| The INSERT statement conflicted with the FOREIGN KEY constraint "..." ...                  |
+|--------------------------------------------------------------------------------------------|
+
+-- View orphaned orders
+SELECT h.salesOrderID, h.DueDate, h.CustomerID, h.ShipMethod, d.SalesOrderDetailID
+FROM SalesLT.SalesOrderHeader AS h
+LEFT JOIN SalesLT.SalesOrderDetail AS d
+ON d.salesOrderID = h.SalesOrderID
+WHERE d.SalesOrderDetailID IS NULL;
+
+-- Manually delete orphaned record
+DELETE FROM SalesLT.SalesOrderHeader
+WHERE SalesOrderID = SCOPE_IDENTITIY();
+
+-- Use a transaction
+BEGIN TRY
+  BEGIN TRANSACTION
+    INSERT INTO SalesLT.SalesOrderHeader (DueDate, CustomerID, ShipMethod)
+    VALUES
+    (DATEADD(DD, 7, GETDATE()), 1, 'STD DELIVERY');
+
+    DECLARE @SalesOrderID int = SCOPE_IDENTITY();
+  
+    INSERT INTO SalesLT.SalesOrderDetail(SalesOrderId, OrderQty, ProductID, UnitPrice, UnitPriceDiscount)
+    VALUES
+    (@SalesOrderID, 1, 99999, 1431.50, 0.00);
+  COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+  IF @@TRANCOUNT > 0
+  BEGIN
+    PRINT XACT_STATE();
+    ROLLBACK TRANSACTION;
+  END
+  PRINT ERROR_MESSAGE();
+  THROW 50001, 'An insert failed. The transaction was canaelled.', 0;
+END CATCH;
+           ||
+           \/
+|--------------------------------------------------------------------------------------------|
+| (1 row(s) affected).                                                                       |
+| (0 row(s) affected).                                                                       |
+| 1                                                                                          |
+| The INSERT statement conflicted with the FOREIGN KEY constraint "..." ...                  |
+| Msg 50001. Level 16, State 0, Line 49                                                      |
+| An insert failed. The transaction was canaelled.                                           |
+|--------------------------------------------------------------------------------------------|
+
+-- Check for orphaned orders
+SELECT h.salesOrderID, h.DueDate, h.CustomerID, h.ShipMethod, d.SalesOrderDetailID
+FROM SalesLT.SalesOrderHeader AS h
+LEFT JOIN SalesLT.SalesOrderDetail AS d
+ON d.salesOrderID = h.SalesOrderID
+WHERE d.SalesOrderDetailID IS NULL;
+
+-- Use XACT_ABORT
+SET XACT_ABORT ON;
+BEGIN TRY
+  BEGIN TRANSACTION
+    INSERT INTO SalesLT.SalesOrderHeader (DueDate, CustomerID, ShipMethod)
+    VALUES
+    (DATEADD(DD, 7, GETDATE()), 1, 'STD DELIVERY');
+
+    DECLARE @SalesOrderID int = SCOPE_IDENTITY();
+  
+    INSERT INTO SalesLT.SalesOrderDetail(SalesOrderId, OrderQty, ProductID, UnitPrice, UnitPriceDiscount)
+    VALUES
+    (@SalesOrderID, 1, 99999, 1431.50, 0.00);
+  COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+  PRINT ERROR_MESSAGE();
+  THROW 50001, 'An insert failed. The transaction was canaelled.', 0;
+END CATCH;
+SET XACT_ABORT OFF;
+           ||
+           \/
+|--------------------------------------------------------------------------------------------|
+| (1 row(s) affected).                                                                       |
+| (0 row(s) affected).                                                                       |
+| The INSERT statement conflicted with the FOREIGN KEY constraint "..." ...                  |
+| Msg 50001. Level 16, State 0, Line 79                                                      |
+| An insert failed. The transaction was canaelled.                                           |
+|--------------------------------------------------------------------------------------------|
+
+-- Check for orphaned orders
+SELECT h.salesOrderID, h.DueDate, h.CustomerID, h.ShipMethod, d.SalesOrderDetailID
+FROM SalesLT.SalesOrderHeader AS h
+LEFT JOIN SalesLT.SalesOrderDetail AS d
+ON d.salesOrderID = h.SalesOrderID
+WHERE d.SalesOrderDetailID IS NULL;
+
+Key Points and Additional Reading
+1. Key Points
+   - Transactions are used to protect data integrity by ensuring that all data changes within a transaction succeed or fail as a unit.
+   - Individual Transact-SQL statements are inherently treated as transactions, 
+     and you can define explicit transacitons that encompass multiple statements.
+   - Use the BEGIN TRANSACTION, COMMIT TRANSACTION, and ROLLBACK TRANSACTION statements to manage transaciton.
+   - Enable the XACT_ABORT option to automatically rollback all transactions if an exception occurs.
+   - Use the @@TRANCOUNT system variable and XACT_STATE system function to determine transaciton status.
+2. Additional Reading
+   - Review the documentation on Transaction Statements, @@TRANCOUNT, and XACT_STATE in the Transact-SQL Language Reference.
+      Transaction Statements: (https://msdn.microsoft.com/en-us/library/ms174377.aspx)
+      @@TRANCOUNT: (https://msdn.microsoft.com/en-us/library/ms187967.aspx)
+      XACT_STATE: (https://msdn.microsoft.com/en-us/library/ms189797.aspx)
+   - For a detailed explanation of how the transaction log is used for data updates and recovery, 
+     see the Technet Magazine article Understanding Logging and Recovery in SQL Server by Paul S. Randall.
+     (https://technet.microsoft.com/en-us/magazine/2009.02.logging.aspx)
