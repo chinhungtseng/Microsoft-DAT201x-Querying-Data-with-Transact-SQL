@@ -1,5 +1,6 @@
 # Microsoft-DAT201x-Querying-Data-with-Transact-SQL
 
+Course complete date: 20190424
 
 Section 1:
 - Module 1: Introduction to Transact-SQL
