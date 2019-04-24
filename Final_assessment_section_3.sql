@@ -5,7 +5,7 @@
 SELECT ProductName, UnitPrice 
 FROM dbo.Products
 WHERE UnitPrice > (SELECT AVG(UnitPrice)
-                   FROM dbo.[Order Details])
+                   FROM dbo.[Order Details]);
 
 -- Question 2
 -- Select from the Employees and Orders tables. 
@@ -14,7 +14,7 @@ SELECT EmployeeID, FirstName
 FROM dbo.Employees
 WHERE EmployeeID IN (SELECT EmployeeID
                     FROM dbo.Orders
-                    WHERE ShipCountry = 'USA')
+                    WHERE ShipCountry = 'USA');
 
 -- Question 3
 -- 1. Use the # to create a new temporary table called ProductNames which has one field called ProductName (a VARCHAR of max length 40).
@@ -28,4 +28,4 @@ CREATE TABLE #ProductNames
 INSERT INTO #ProductNames
 SELECT ProductName FROM  Products;
 
-SELECT * from #ProductNames
+SELECT * from #ProductNames;

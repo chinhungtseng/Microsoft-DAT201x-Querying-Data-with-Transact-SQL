@@ -41,7 +41,7 @@ ORDER BY UnitsInStock DESC OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY;
 SELECT FirstName + ' has an EmployeeID of ' + 
        STR(EmployeeID, 1) + ' and was born ' + 
        CONVERT(NVARCHAR(30), BirthDate, 126)
-FROM dbo.Employees
+FROM dbo.Employees;
 
 -- Question 8
 -- Select from the Orders table.
@@ -49,7 +49,7 @@ FROM dbo.Employees
 -- <<ShipName>> is from <<ShipCity or ShipRegion or ShipCountry>>
 -- If there is no ShipCity, then you should select ShipRegion, and if there is no ShipRegion you should select ShipCountry.
 SELECT ShipName + ' is from ' + ISNULL(ShipCity, ISNULL(ShipRegion, ShipCountry))
-FROM dbo.Orders
+FROM dbo.Orders;
 
 -- Question 9
 -- Select the ship name and ship postal code from the Orders table. If the postal code is missing, display 'unknown'
@@ -65,5 +65,5 @@ SELECT CompanyName,
     WHEN Fax IS NULL THEN 'outdated'
     ELSE 'modern'
   END AS Status
-FROM dbo.Suppliers
+FROM dbo.Suppliers;
 -- https://docs.microsoft.com/en-us/sql/t-sql/language-elements/case-transact-sql?view=sql-server-2017
